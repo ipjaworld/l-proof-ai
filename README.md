@@ -1,0 +1,66 @@
+# L-Proof-AI
+
+AI가 모으고 사람이 증명하는, 개발자를 위한 주 2회 검증 브리핑 랜딩 MVP입니다. Gate 1과 Gate 2 승인을 거쳐 전체 랜딩과 `Submit → Store → Notify` 흐름을 production에 공개했습니다.
+
+## Local development
+
+```bash
+npm install
+npm run dev
+```
+
+기본 주소는 `http://localhost:5173`입니다. D1을 처음 준비할 때는 build 이후 다음 명령으로 migration을 적용합니다.
+
+```bash
+npm run build
+node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_lproof_subscribers.sql
+```
+
+## Architecture
+
+- Vinext / React / TypeScript
+- Cloudflare Sites runtime
+- Cloudflare D1: `subscribers`, `request_limits`
+- Resend HTTP API: 신규 신청 및 해지 운영자 알림
+- Web form과 WebMCP `request_lproof_briefing` 도구가 같은 `/api/subscribe` 경로 사용
+
+브라우저에는 email provider secret이 전달되지 않습니다. API는 이메일을 소문자로 정규화하고 unique index와 upsert로 중복 row를 막습니다. 허니팟과 해시 기반 10분당 5회 rate limit을 적용합니다. 신규 신청만 운영자 알림을 시도하며, 알림이 실패하거나 설정되지 않아도 저장 결과는 보존합니다.
+
+## Subscriber lifecycle
+
+`pending → approved | rejected | unsubscribed`
+
+운영자는 D1의 `subscribers.status`를 바꾸고 해당 시각 필드(`approved_at`, `rejected_at`, `unsubscribed_at`)를 함께 기록합니다. 발송 에이전트는 `status = 'approved'`인 row만 읽어야 합니다. `email_verified_at`은 향후 double opt-in을 도입할 때 사용하며 MVP에서는 비어 있습니다.
+
+## Environment
+
+`.env.example`에는 키 이름만 있습니다. 실제 값은 로컬 비추적 환경 또는 Sites runtime secret에만 설정합니다.
+
+- `RESEND_API_KEY`
+- `OPERATOR_NOTIFICATION_EMAIL`
+- `EMAIL_FROM` — 검증된 Resend sender
+- `RATE_LIMIT_SALT`
+- `SITE_URL`
+
+## Content and routes
+
+- 랜딩 콘텐츠: `content/site.ts`
+- 개인정보 처리방침: `/privacy`
+- 수신거부: `/unsubscribe`
+- OG image: `public/og.png` (1200×630)
+
+실제 운영자 사진과 현재 프로젝트·도구·실험 항목은 명세대로 placeholder로 남겨 두었습니다. 실제 정보를 확인한 뒤 교체해야 합니다.
+
+## Checks
+
+```bash
+npm run lint
+npx tsc --noEmit
+npm run build
+```
+
+운영·발송 인수인계는 `docs/HANDOFF_SENDING_AGENT.md`, 검증 항목은 `docs/QA_CHECKLIST.md`를 참고합니다.
+
+## Deployment
+
+Production URL은 `https://l-proof-ai.ipjaworld.chatgpt.site`입니다. Cloudflare Sites가 D1 binding과 migration을 관리하며, canonical·sitemap·robots·OG metadata는 이 origin을 기준으로 설정했습니다. `OPERATOR_NOTIFICATION_EMAIL`과 `RATE_LIMIT_SALT`는 production에 설정되어 있습니다. Resend 알림을 활성화하려면 검증된 sender와 함께 `RESEND_API_KEY`, `EMAIL_FROM`을 Sites runtime secret에 추가한 뒤 다시 배포해야 합니다.
