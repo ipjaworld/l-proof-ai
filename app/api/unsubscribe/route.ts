@@ -1,0 +1,49 @@
+import { NextResponse } from "next/server";
+import { enforceRateLimit, requestKey, unsubscribeSubscriber } from "@/db/subscribers";
+import { notifyOperator } from "@/lib/notification";
+import { unsubscribeSchema } from "@/lib/validation";
+
+const success = () =>
+  NextResponse.json({
+    ok: true,
+    message: "구독 해지 요청을 처리했어요. 같은 주소로 다시 신청하면 검토 대기 상태로 돌아갑니다.",
+  });
+
+export async function POST(request: Request) {
+  try {
+    const body = (await request.json()) as Record<string, unknown>;
+    if (typeof body?.website === "string" && body.website.length > 0) return success();
+    const parsed = unsubscribeSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { ok: false, message: "이메일 주소를 다시 확인해주세요." },
+        { status: 400 },
+      );
+    }
+
+    await enforceRateLimit(await requestKey(request, "unsubscribe"));
+    const subscriber = await unsubscribeSubscriber(parsed.data.email);
+    if (subscriber) {
+      await notifyOperator({
+        email: subscriber.email,
+        name: subscriber.name,
+        interests: JSON.parse(subscriber.interests) as string[],
+        createdAt: new Date().toISOString(),
+        kind: "unsubscribe",
+      });
+    }
+    return success();
+  } catch (error) {
+    if (error instanceof Error && error.message === "RATE_LIMITED") {
+      return NextResponse.json(
+        { ok: false, message: "요청이 잠시 몰렸어요. 10분 뒤 다시 시도해주세요." },
+        { status: 429 },
+      );
+    }
+    console.error("unsubscribe_failed", error);
+    return NextResponse.json(
+      { ok: false, message: "처리하지 못했어요. lproof073@gmail.com으로 해지를 요청해주세요." },
+      { status: 500 },
+    );
+  }
+}
