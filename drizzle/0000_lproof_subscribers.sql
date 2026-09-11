@@ -1,4 +1,4 @@
-CREATE TABLE `subscribers` (
+CREATE TABLE IF NOT EXISTS `subscribers` (
 	`id` text PRIMARY KEY NOT NULL,
 	`email` text NOT NULL,
 	`normalized_email` text NOT NULL,
@@ -23,11 +23,11 @@ CREATE TABLE `subscribers` (
 	`last_applied_at` text NOT NULL
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `idx_subscribers_normalized_email` ON `subscribers` (`normalized_email`);
+CREATE UNIQUE INDEX IF NOT EXISTS `idx_subscribers_normalized_email` ON `subscribers` (`normalized_email`);
 --> statement-breakpoint
-CREATE INDEX `idx_subscribers_status` ON `subscribers` (`status`);
+CREATE INDEX IF NOT EXISTS `idx_subscribers_status` ON `subscribers` (`status`);
 --> statement-breakpoint
-CREATE TABLE `request_limits` (
+CREATE TABLE IF NOT EXISTS `request_limits` (
 	`key` text PRIMARY KEY NOT NULL,
 	`window_start` integer NOT NULL,
 	`count` integer DEFAULT 1 NOT NULL,

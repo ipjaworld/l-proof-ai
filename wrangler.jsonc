@@ -1,0 +1,28 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "l-proof-ai",
+  "account_id": "ffcaf616c0b78261504008ed69fcf9b4",
+  "main": "vinext/server/fetch-handler",
+  "compatibility_date": "2025-05-05",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "dist/client",
+    "not_found_handling": "none",
+    "binding": "ASSETS"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "l-proof-ai-production",
+      "database_id": "784bb650-4355-4825-b9bd-8f5c26fb34fb",
+      "migrations_dir": "drizzle"
+    }
+  ],
+  "vars": {
+    "OPERATOR_NOTIFICATION_EMAIL": "ipjaworld@gmail.com"
+  },
+  "keep_vars": true,
+  "observability": {
+    "enabled": true
+  }
+}
