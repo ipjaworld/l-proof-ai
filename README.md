@@ -24,7 +24,9 @@ node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1
 - Resend HTTP API: 신규 신청 및 해지 운영자 알림
 - Web form과 WebMCP `request_lproof_briefing` 도구가 같은 `/api/subscribe` 경로 사용
 
-브라우저에는 email provider secret이 전달되지 않습니다. API는 이메일을 소문자로 정규화하고 unique index와 upsert로 중복 row를 막습니다. 허니팟과 해시 기반 10분당 5회 rate limit을 적용합니다. 신규 신청만 운영자 알림을 시도하며, 알림이 실패하거나 설정되지 않아도 저장 결과는 보존합니다.
+브라우저에는 email provider secret이 전달되지 않습니다. API는 이메일을 소문자로 정규화하고 unique index와 upsert로 중복 row를 막습니다. 허니팟, 8KB 요청 제한, IP 기준 10분당 5회 제한을 적용합니다. 접수는 하루 200건, 운영자 이메일은 하루 25건으로 절대 상한을 두어 분산 요청이 발생해도 외부 이메일 비용이 급증하지 않게 했습니다.
+
+운영자 알림이 `failed`, `not-configured`, `deferred`인 신청자는 10분이 지난 뒤 재신청하면 알림을 다시 시도합니다. 이미 `sent`인 신청자는 정보를 갱신하되 같은 알림을 반복 발송하지 않습니다. 알림 실패와 일일 상한 도달은 신청 저장 결과를 되돌리지 않습니다.
 
 ## Subscriber lifecycle
 
@@ -75,4 +77,4 @@ npm run subscribers -- recipients
 
 ## Deployment
 
-Production URL은 `https://l-proof-ai.ipjaworld.chatgpt.site`입니다. Cloudflare Sites가 D1 binding과 migration을 관리하며, canonical·sitemap·robots·OG metadata는 이 origin을 기준으로 설정했습니다. `OPERATOR_NOTIFICATION_EMAIL`과 `RATE_LIMIT_SALT`는 production에 설정되어 있습니다. Resend 알림을 활성화하려면 검증된 sender와 함께 `RESEND_API_KEY`, `EMAIL_FROM`을 Sites runtime secret에 추가한 뒤 다시 배포해야 합니다.
+Production URL은 `https://l-proof-ai.xyz`입니다. GitHub `main` push를 기준으로 Cloudflare Workers가 build와 deploy를 실행하고 D1 migration을 적용합니다. `RESEND_API_KEY`는 Cloudflare secret으로, 발신·수신 주소와 rate-limit salt는 server-side variable 또는 secret으로 관리합니다.

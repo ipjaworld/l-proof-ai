@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
+import "@fontsource/noto-serif-kr/600.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://l-proof-ai.ipjaworld.chatgpt.site"),
+  metadataBase: new URL("https://l-proof-ai.xyz"),
   title: "L-Proof-AI — AI가 모으고, 사람이 증명합니다",
   description: "코딩 에이전트와 LLM 소식을 원문과 직접 테스트로 검증해 보내는 개발자 브리핑.",
   alternates: {
@@ -20,9 +22,6 @@ export const metadata: Metadata = {
     title: "L-Proof-AI — AI가 모으고, 사람이 증명합니다",
     description: "AI가 모으고, 사람이 증명하는 개발자 브리핑.",
     images: ["/og.png"],
-  },
-  other: {
-    "codex-preview": "development",
   },
   icons: {
     icon: "/favicon.svg",

@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
-import { enforceRateLimit, requestKey, unsubscribeSubscriber } from "@/db/subscribers";
+import {
+  consumeBudget,
+  enforceRateLimit,
+  requestKey,
+  setNotificationResult,
+  unsubscribeSubscriber,
+} from "@/db/subscribers";
 import { notifyOperator } from "@/lib/notification";
+import { readFormJson } from "@/lib/request";
 import { unsubscribeSchema } from "@/lib/validation";
 
 const success = () =>
@@ -11,7 +18,7 @@ const success = () =>
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as Record<string, unknown>;
+    const body = await readFormJson(request);
     if (typeof body?.website === "string" && body.website.length > 0) return success();
     const parsed = unsubscribeSchema.safeParse(body);
     if (!parsed.success) {
@@ -24,7 +31,20 @@ export async function POST(request: Request) {
     await enforceRateLimit(await requestKey(request, "unsubscribe"));
     const subscriber = await unsubscribeSubscriber(parsed.data.email);
     if (subscriber) {
-      await notifyOperator({
+      const withinNotificationBudget = await consumeBudget(
+        "global:operator-notification",
+        25,
+        24 * 60 * 60_000,
+      );
+      if (!withinNotificationBudget) {
+        await setNotificationResult(
+          subscriber.id,
+          "deferred",
+          "Daily operator notification budget reached",
+        );
+        return success();
+      }
+      const notification = await notifyOperator({
         id: subscriber.id,
         email: subscriber.email,
         name: subscriber.name,
@@ -32,9 +52,16 @@ export async function POST(request: Request) {
         createdAt: new Date().toISOString(),
         kind: "unsubscribe",
       });
+      await setNotificationResult(subscriber.id, notification.status, notification.error);
     }
     return success();
   } catch (error) {
+    if (error instanceof Error && ["PAYLOAD_TOO_LARGE", "INVALID_JSON"].includes(error.message)) {
+      return NextResponse.json(
+        { ok: false, message: "요청 형식을 확인해주세요." },
+        { status: error.message === "PAYLOAD_TOO_LARGE" ? 413 : 400 },
+      );
+    }
     if (error instanceof Error && error.message === "RATE_LIMITED") {
       return NextResponse.json(
         { ok: false, message: "요청이 잠시 몰렸어요. 10분 뒤 다시 시도해주세요." },

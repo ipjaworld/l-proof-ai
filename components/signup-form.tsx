@@ -10,9 +10,9 @@ type Interest = "coding-agents" | "llm" | "agi";
 type FormState = "idle" | "pending" | "success" | "error";
 
 const interestOptions: { value: Interest; label: string }[] = [
-  { value: "coding-agents", label: "Coding Agents" },
+  { value: "coding-agents", label: "코딩 에이전트" },
   { value: "llm", label: "LLM" },
-  { value: "agi", label: "AGI 관전 포인트" },
+  { value: "agi", label: "AGI 동향" },
 ];
 
 type SubscribePayload = {
@@ -52,7 +52,7 @@ export function SignupForm({ placement = "hero" }: { placement?: "hero" | "foote
     } catch {
       const result = {
         ok: false,
-        message: "연결을 확인한 뒤 다시 시도해주세요. 계속 실패하면 lproof073@gmail.com으로 알려주세요.",
+        message: "네트워크 상태를 확인한 뒤 다시 시도해주세요. 문제가 계속되면 lproof073@gmail.com으로 알려주세요.",
       };
       setMessage(result.message);
       setState("error");

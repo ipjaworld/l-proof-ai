@@ -24,6 +24,8 @@ export const subscribers = sqliteTable(
     lastSentAt: text("last_sent_at"),
     notificationStatus: text("notification_status").notNull().default("pending"),
     notificationError: text("notification_error"),
+    notificationLastAttemptAt: text("notification_last_attempt_at"),
+    notificationAttempts: integer("notification_attempts").notNull().default(0),
     lastAppliedAt: text("last_applied_at").notNull(),
   },
   (table) => [

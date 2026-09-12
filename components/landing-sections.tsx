@@ -7,7 +7,7 @@ export function LoopSection() {
     <section className="loop-section" aria-labelledby="loop-title">
       <div className="section-heading">
         <p>검증은 한 번의 필터가 아니라</p>
-        <h2 id="loop-title">사람에게 돌아오는<br />하나의 loop예요.</h2>
+        <h2 id="loop-title">마지막 판단은<br />사람의 몫입니다.</h2>
         <p className="section-intro">{siteContent.loop.intro}</p>
       </div>
       <ol className="loop-track">
@@ -39,7 +39,7 @@ export function BriefAnatomySection() {
         <aside className="brief-annotations left" aria-label="왼쪽 주석">
           <p><span>실제 발표일</span>날짜가 확인되지 않으면 싣지 않아요.</p>
           <p><span>검증 등급</span>선의 형태와 텍스트로 함께 표시해요.</p>
-          <p><span>개발자 영향</span>내 작업에서 무엇이 달라지는지 봐요.</p>
+          <p><span>개발자 영향</span>내 작업에서 달라지는 점을 짚어요.</p>
         </aside>
         <article className="brief-paper">
           <div className="brief-paper-top">
@@ -65,11 +65,11 @@ export function BriefAnatomySection() {
             <span>이번 주 할 일</span>
             <code>{brief.action}</code>
           </div>
-          <p className="brief-original"><span>원문</span> 실제 발행호에서는 확인한 원문으로 연결해요.</p>
+          <p className="brief-original"><span>원문</span> 실제 브리핑에서는 확인한 원문을 연결해요.</p>
         </article>
         <aside className="brief-annotations right" aria-label="오른쪽 주석">
           <p><span>Lee’s Take</span>사실과 제 판단을 타이포그래피로 분리해요.</p>
-          <p><span>이번 주 할 일</span>읽은 뒤 바로 실행할 수 있게 적어요.</p>
+          <p><span>이번 주 할 일</span>읽고 바로 실행할 수 있도록 구체적으로 적어요.</p>
           <p><span>원문</span>모든 항목에 확인 경로를 남겨요.</p>
         </aside>
       </div>
@@ -180,7 +180,7 @@ export function SiteFooter() {
         <a href={siteContent.links.contact}>문의</a>
         <a href="/privacy">개인정보 처리방침</a>
         <a href="/unsubscribe">수신거부</a>
-        <span>GitHub repository · private</span>
+        <span>소스 저장소 · 비공개</span>
       </nav>
       <p>© 2026 L-Proof-AI · 이건하</p>
     </footer>

@@ -80,7 +80,8 @@ try {
   } else if (["pending", "approved", "rejected"].includes(command)) {
     printRows(
       execute(
-        `SELECT email, COALESCE(name, '-') AS name, interests, created_at, last_applied_at
+        `SELECT email, COALESCE(name, '-') AS name, interests, notification_status,
+                notification_attempts, notification_error, created_at, last_applied_at
          FROM subscribers WHERE status = '${command}' ORDER BY last_applied_at DESC`,
       ),
     );

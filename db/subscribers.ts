@@ -16,6 +16,8 @@ type UpsertResult = {
   id: string;
   status: string;
   created_at: string;
+  notification_status: string;
+  notification_last_attempt_at: string | null;
 };
 
 function database() {
@@ -25,20 +27,16 @@ function database() {
 
 export async function requestKey(request: Request, action: string) {
   const values = env as Cloudflare.Env;
-  const ip =
-    request.headers.get("cf-connecting-ip") ??
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    "local";
-  const agent = request.headers.get("user-agent")?.slice(0, 160) ?? "unknown";
+  const ip = request.headers.get("cf-connecting-ip") ?? "non-cloudflare";
   const salt = values.RATE_LIMIT_SALT ?? "l-proof-ai-local-preview";
-  const bytes = new TextEncoder().encode([salt, action, ip, agent].join("|"));
+  const bytes = new TextEncoder().encode([salt, action, ip].join("|"));
   const digest = await crypto.subtle.digest("SHA-256", bytes);
   return Array.from(new Uint8Array(digest), (byte) =>
     byte.toString(16).padStart(2, "0"),
   ).join("");
 }
 
-export async function enforceRateLimit(key: string, limit = 5, windowMs = 10 * 60_000) {
+export async function consumeBudget(key: string, limit: number, windowMs: number) {
   const now = Date.now();
   const windowBoundary = now - windowMs;
   const result = await database()
@@ -49,12 +47,26 @@ export async function enforceRateLimit(key: string, limit = 5, windowMs = 10 * 6
          "count" = CASE WHEN "window_start" < ? THEN 1 ELSE "count" + 1 END,
          "window_start" = CASE WHEN "window_start" < ? THEN ? ELSE "window_start" END,
          "updated_at" = ?
+       WHERE "window_start" < ? OR "count" < ?
        RETURNING "count"`,
     )
-    .bind(key, now, now, windowBoundary, windowBoundary, now, now)
+    .bind(key, now, now, windowBoundary, windowBoundary, now, now, windowBoundary, limit)
     .first<{ count: number }>();
 
-  if (!result || result.count > limit) throw new Error("RATE_LIMITED");
+  return Boolean(result && result.count <= limit);
+}
+
+export async function hasBudget(key: string, limit: number, windowMs: number) {
+  const boundary = Date.now() - windowMs;
+  const result = await database()
+    .prepare(`SELECT "count", "window_start" FROM request_limits WHERE "key" = ?`)
+    .bind(key)
+    .first<{ count: number; window_start: number }>();
+  return !result || result.window_start < boundary || result.count < limit;
+}
+
+export async function enforceRateLimit(key: string, limit = 5, windowMs = 10 * 60_000) {
+  if (!(await consumeBudget(key, limit, windowMs))) throw new Error("RATE_LIMITED");
 }
 
 export async function upsertSubscriber(input: SubscriptionInput) {
@@ -80,7 +92,7 @@ export async function upsertSubscriber(input: SubscriptionInput) {
         "utm_medium" = COALESCE(excluded."utm_medium", subscribers."utm_medium"),
         "utm_campaign" = COALESCE(excluded."utm_campaign", subscribers."utm_campaign"),
         "last_applied_at" = excluded."last_applied_at"
-      RETURNING "id", "status", "created_at"`,
+      RETURNING "id", "status", "created_at", "notification_status", "notification_last_attempt_at"`,
     )
     .bind(
       id,
@@ -104,17 +116,26 @@ export async function upsertSubscriber(input: SubscriptionInput) {
 
 export async function setNotificationResult(
   id: string,
-  status: "sent" | "not-configured" | "failed",
+  status: "sent" | "not-configured" | "failed" | "deferred",
   error?: string,
 ) {
+  const now = new Date().toISOString();
   await database()
     .prepare(
       `UPDATE subscribers
-       SET "notification_status" = ?, "notification_error" = ?
+       SET "notification_status" = ?, "notification_error" = ?,
+           "notification_last_attempt_at" = ?, "notification_attempts" = "notification_attempts" + 1
        WHERE "id" = ?`,
     )
-    .bind(status, error?.slice(0, 300) ?? null, id)
+    .bind(status, error?.slice(0, 300) ?? null, now, id)
     .run();
+}
+
+export function shouldNotifyOperator(subscriber: UpsertResult, now = Date.now()) {
+  if (subscriber.notification_status === "sent") return false;
+  if (!subscriber.notification_last_attempt_at) return true;
+  const lastAttempt = Date.parse(subscriber.notification_last_attempt_at);
+  return !Number.isFinite(lastAttempt) || now - lastAttempt >= 10 * 60_000;
 }
 
 export async function unsubscribeSubscriber(normalizedEmail: string) {

@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const origin = "https://l-proof-ai.ipjaworld.chatgpt.site";
+const origin = "https://l-proof-ai.xyz";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [

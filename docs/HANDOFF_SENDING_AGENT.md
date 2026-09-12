@@ -48,6 +48,8 @@ npm run subscribers -- recipients
 
 ## 장애 처리
 
-구독 저장과 운영 알림은 분리되어 있습니다. `notification_status`가 `failed` 또는 `not-configured`여도 신청 row는 남습니다. 운영자는 해당 상태를 조회해 별도로 확인하고, 알림 재시도 때문에 구독 row를 다시 만들지 않습니다.
+구독 저장과 운영 알림은 분리되어 있습니다. `notification_status`가 `failed`, `not-configured`, `deferred`여도 신청 row는 남습니다. 마지막 알림 시도에서 10분이 지난 뒤 같은 주소로 재신청하면 운영 알림을 다시 시도합니다. 하루 운영 알림 25건 상한에 도달하면 `deferred`로 기록하며, 다음 운영일에 재신청하거나 운영자가 D1에서 확인합니다.
+
+접수 API는 IP 기준 10분당 5회, 전체 하루 200건으로 제한합니다. 브라우저의 User-Agent 변경으로 IP 제한을 우회할 수 없으며, 일일 상한 이후에는 공격자가 응답 차이를 이용하지 못하도록 일반 성공 응답을 반환하되 추가 D1 row와 외부 이메일을 만들지 않습니다.
 
 Double opt-in은 MVP에서 비활성입니다. 도입 전까지 `email_verified_at`은 발송 조건이 아니며, 운영자 수동 승인 책임이 더 큽니다.

@@ -10,7 +10,7 @@ type NotificationRecord = {
 };
 
 export type NotificationResult = {
-  status: "sent" | "not-configured" | "failed";
+  status: "sent" | "not-configured" | "failed" | "deferred";
   error?: string;
 };
 
