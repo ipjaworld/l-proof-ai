@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 
 type NotificationRecord = {
+  id: string;
   email: string;
   name?: string | null;
   interests: string[];
@@ -29,6 +30,7 @@ export async function notifyOperator(record: NotificationRecord): Promise<Notifi
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
+      "Idempotency-Key": `operator-${record.kind}-${record.id}`,
     },
     body: JSON.stringify({
       from,
@@ -36,12 +38,17 @@ export async function notifyOperator(record: NotificationRecord): Promise<Notifi
       subject: `[L-Proof-AI] ${action}: ${record.email}`,
       text: [
         `처리: ${action}`,
+        `신청 ID: ${record.id}`,
         `이메일: ${record.email}`,
         `이름: ${record.name || "-"}`,
         `관심 분야: ${record.interests.join(", ") || "-"}`,
         `시간: ${record.createdAt}`,
         "",
-        "구독자 상태는 Sites의 D1 subscribers 테이블에서 변경할 수 있어요.",
+        "운영 명령:",
+        `npm run subscribers -- approve ${record.email}`,
+        `npm run subscribers -- reject ${record.email}`,
+        "",
+        "승인 전에는 브리핑 발송 대상에 포함되지 않아요.",
       ].join("\n"),
     }),
   });

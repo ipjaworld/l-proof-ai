@@ -14,6 +14,7 @@
     "typecheck": "tsc --noEmit",
     "deploy:cloudflare": "wrangler d1 migrations apply DB --remote && vinext-cloudflare deploy --skip-build",
     "deploy:cloudflare:full": "npm run build && npm run deploy:cloudflare",
+    "subscribers": "node scripts/subscribers.mjs",
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {

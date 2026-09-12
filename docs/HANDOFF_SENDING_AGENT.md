@@ -15,6 +15,20 @@ Cloudflare D1의 `subscribers` 테이블이 구독자 상태의 단일 원본입
 
 운영 UI는 MVP 범위에서 제외됐습니다. 당분간 Cloudflare의 D1 console 또는 승인된 운영 스크립트에서 수정합니다. 변경 전후 row를 확인하고, 여러 row를 일괄 승인하지 않습니다.
 
+## 20명 이하 수동 운영 명령
+
+```bash
+npm run subscribers -- status
+npm run subscribers -- pending
+npm run subscribers -- approve person@example.com
+npm run subscribers -- reject person@example.com
+npm run subscribers -- recipients
+```
+
+명령은 기본적으로 production D1을 대상으로 합니다. 로컬 검증에는 끝에 `--local`을 붙입니다. `approve`와 `reject`는 한 번에 정확히 한 주소만 처리하며, 수신거부 상태는 이 명령으로 되돌리지 않습니다.
+
+실제 브리핑을 보내기 전 `recipients` 결과를 운영자가 확인해야 합니다. 이 스크립트는 승인과 조회만 담당하며 이메일을 자동 발송하지 않습니다.
+
 ## 발송 안전 규칙
 
 1. dry run에서 수신자 수와 주소를 운영자가 확인합니다.

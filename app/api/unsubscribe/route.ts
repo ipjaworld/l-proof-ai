@@ -25,6 +25,7 @@ export async function POST(request: Request) {
     const subscriber = await unsubscribeSubscriber(parsed.data.email);
     if (subscriber) {
       await notifyOperator({
+        id: subscriber.id,
         email: subscriber.email,
         name: subscriber.name,
         interests: JSON.parse(subscriber.interests) as string[],

@@ -31,6 +31,7 @@ export async function POST(request: Request) {
     const subscriber = await upsertSubscriber(parsed.data);
     if (subscriber.isNew) {
       const notification = await notifyOperator({
+        id: subscriber.id,
         email: parsed.data.email,
         name: parsed.data.name || null,
         interests: parsed.data.interests,

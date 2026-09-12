@@ -123,7 +123,7 @@ export async function unsubscribeSubscriber(normalizedEmail: string) {
     .prepare(
       `UPDATE subscribers
        SET "status" = 'unsubscribed', "unsubscribed_at" = ?
-       WHERE "normalized_email" = ?
+       WHERE "normalized_email" = ? AND "status" != 'unsubscribed'
        RETURNING "id", "email", "name", "interests"`,
     )
     .bind(now, normalizedEmail)

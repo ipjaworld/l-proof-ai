@@ -61,6 +61,18 @@ npm run build
 
 운영·발송 인수인계는 `docs/HANDOFF_SENDING_AGENT.md`, 검증 항목은 `docs/QA_CHECKLIST.md`를 참고합니다.
 
+20명 이하의 초기 운영에서는 관리자 화면 대신 최소 운영 스크립트를 사용합니다.
+
+```bash
+npm run subscribers -- status
+npm run subscribers -- pending
+npm run subscribers -- approve person@example.com
+npm run subscribers -- reject person@example.com
+npm run subscribers -- recipients
+```
+
+실제 브리핑 발송은 자동화하지 않았습니다. `recipients`로 승인된 수신자를 확인한 뒤 운영자가 별도로 발송합니다.
+
 ## Deployment
 
 Production URL은 `https://l-proof-ai.ipjaworld.chatgpt.site`입니다. Cloudflare Sites가 D1 binding과 migration을 관리하며, canonical·sitemap·robots·OG metadata는 이 origin을 기준으로 설정했습니다. `OPERATOR_NOTIFICATION_EMAIL`과 `RATE_LIMIT_SALT`는 production에 설정되어 있습니다. Resend 알림을 활성화하려면 검증된 sender와 함께 `RESEND_API_KEY`, `EMAIL_FROM`을 Sites runtime secret에 추가한 뒤 다시 배포해야 합니다.
