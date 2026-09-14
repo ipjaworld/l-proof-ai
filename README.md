@@ -9,7 +9,7 @@ npm install
 npm run dev
 ```
 
-기본 주소는 `http://localhost:5173`입니다. D1을 처음 준비할 때는 build 이후 다음 명령으로 migration을 적용합니다.
+기본 주소는 `http://localhost:4000`입니다. D1을 처음 준비할 때는 build 이후 다음 명령으로 migration을 적용합니다.
 
 ```bash
 npm run build
