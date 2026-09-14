@@ -61,7 +61,7 @@ npx tsc --noEmit
 npm run build
 ```
 
-운영·발송 인수인계는 `docs/HANDOFF_SENDING_AGENT.md`, 검증 항목은 `docs/QA_CHECKLIST.md`를 참고합니다.
+운영·발송 인수인계는 `docs/HANDOFF_SENDING_AGENT.md`, 검증 항목은 `docs/QA_CHECKLIST.md`를 참고합니다. 카피·포지셔닝 기준은 `docs/POSITIONING.md`, 비주얼 시스템 기준은 `docs/DESIGN_PRINCIPLES.md`를 참고합니다 — 로컬/다른 PC/Codex 어디서 작업하든 이 두 문서가 단일 기준입니다.
 
 20명 이하의 초기 운영에서는 관리자 화면 대신 최소 운영 스크립트를 사용합니다.
 
