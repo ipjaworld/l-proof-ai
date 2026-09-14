@@ -106,10 +106,13 @@ export function PersonSection() {
   const operator = siteContent.operator;
   return (
     <section className="person-section" aria-labelledby="person-title">
-      <div className="person-photo" role="img" aria-label="운영자 실제 사진 자리">
-        <LStamp size="large" />
-        <span>{operator.photoPlaceholder}</span>
-      </div>
+      <figure className="person-photo">
+        <img src={operator.image} alt={operator.imageAlt} loading="eager" />
+        <figcaption>
+          <span>HUMAN CHECKPOINT</span>
+          원문을 읽고, 판단을 남기는 자리
+        </figcaption>
+      </figure>
       <div className="person-copy">
         <p className="person-label">THE PERSON IN THE LOOP</p>
         <h2 id="person-title">{operator.name}</h2>

@@ -14,7 +14,7 @@ export const siteContent = {
   noise: {
     headlines: [
       "모든 벤치마크 1위",
-      "개발자 일자리는 끝났다",
+      "이제 코딩은 전부 AI가 한다?",
       "이 프롬프트 하나면 끝",
       "AGI, 올해 안에 온다",
       "모든 벤치마크 1위",
@@ -55,14 +55,15 @@ export const siteContent = {
   operator: {
     name: "이건하",
     role: "현직 프론트엔드 개발자 · 1인 운영",
-    photoPlaceholder: "[PLACEHOLDER: 운영자 실제 사진]",
+    image: "/images/editorial-proof-desk.png",
+    imageAlt: "검토 표시가 남은 원고와 연필, 붉은 도장이 놓인 편집자의 책상",
     introduction:
-      "이 브리핑은 AI가 자동으로 골라 보내는 뉴스가 아니에요. 안녕하세요, 이건하입니다. 현직 프론트엔드 개발자로, AI 도구를 활용해 직접 서비스를 만들어요. 여러 코딩 에이전트의 역할을 나누고, 서로 다른 모델의 답을 교차검증한 뒤, 마지막 결과는 실제 브라우저에서 다시 확인합니다. L-Proof-AI의 브리핑도 같은 원칙으로 만들어요 — AI가 모은 소식을 제가 직접 원문까지 확인하고, 제 판단을 코멘트로 남긴 것만 보내드립니다.",
+      "안녕하세요, 이건하입니다. 복잡한 업무 흐름을 안정적인 사용자 경험으로 옮기는 프론트엔드 개발자예요. AI가 모은 소식도 코드처럼 다룹니다. 원문을 확인하고, 서로 다른 답을 교차검증하고, 직접 써본 뒤 제 판단을 남깁니다. 그 과정을 통과하지 않은 내용은 보내지 않아요.",
     now: [
-      { label: "만드는 것", value: "[PLACEHOLDER: 현재 만드는 프로젝트]" },
-      { label: "쓰는 도구", value: "[PLACEHOLDER: 현재 사용하는 도구]" },
-      { label: "최근 실험", value: "[PLACEHOLDER: 최근 실험]" },
-      { label: "관심사", value: "코딩 에이전트의 실제 작업 품질" },
+      { label: "만드는 것", value: "개발 현장의 시행착오를 경험 기록부터 원칙·챕터까지 추적하는 AI 협업 집필 시스템" },
+      { label: "쓰는 도구", value: "Next.js · TypeScript · Codex · Playwright · Vitest" },
+      { label: "최근 실험", value: "AI는 편집과 QA를 맡고, 사람의 경험과 최종 승인은 자동화하지 않는 집필 루프" },
+      { label: "확인 방식", value: "타입 검사 · 자동화 테스트 · 실제 브라우저 QA" },
     ],
   },
   editions: [

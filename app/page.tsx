@@ -27,7 +27,7 @@ export default function Home() {
         <div className="hero-grid" id="top">
           <div className="hero-copy">
             <div className="correction" aria-label="과장된 소식을 검증해 행동으로 바꾸는 과정">
-              <span className="correction-before">개발자는 이제 필요 없다</span>
+              <span className="correction-before">이제 코딩은 전부 AI가 한다?</span>
               <span className="correction-rule" aria-hidden="true" />
               <span className="correction-after">이번 주 개발자가 해볼 일은 이것</span>
               <LStamp size="tiny" className="correction-stamp" />
