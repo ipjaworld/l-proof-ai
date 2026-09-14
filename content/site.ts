@@ -70,7 +70,7 @@ export const siteContent = {
       day: "MONDAY · 09:00",
       title: "Main Briefing",
       description: "목요일부터 일요일까지의 주요 이슈, 검증 결과, 개발자 영향, 제 판단과 이번 주 할 일을 묶어요.",
-      items: ["주요 이슈 5~10개", "Lee’s Take", "Proof Lab", "무시해도 되는 것"],
+      items: ["주요 이슈 5~10개", "항목별 검증 등급", "Lee’s Take", "무시해도 되는 것"],
     },
     {
       day: "THURSDAY · 09:00",
