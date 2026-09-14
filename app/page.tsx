@@ -33,7 +33,7 @@ export default function Home() {
               <LStamp size="tiny" className="correction-stamp" />
             </div>
 
-            <p className="hero-kicker">개발자를 위한 주 2회 검증 노트</p>
+            <p className="hero-kicker">현직 프론트엔드 개발자가 직접 쓰는 주 2회 검증 노트</p>
             <h1 id="hero-title">
               밤새 쏟아진 AI 소식,
               <br />
@@ -66,10 +66,10 @@ export default function Home() {
       </section>
 
       <NoiseAtNight />
+      <PersonSection />
       <LoopSection />
       <BriefAnatomySection />
       <WhyLSection />
-      <PersonSection />
       <ReceiveSection />
       <FinalSignupSection />
       <SiteFooter />
