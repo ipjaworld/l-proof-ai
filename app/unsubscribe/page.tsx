@@ -11,7 +11,7 @@ export default function UnsubscribePage() {
         <h1>브리핑 수신거부</h1>
         <p>구독 신청에 사용한 이메일을 입력하면 수신거부 상태로 변경합니다. 개인정보 보호를 위해 등록 여부와 관계없이 같은 완료 메시지를 보여드려요.</p>
         <UnsubscribeForm />
-        <p className="legal-help">직접 처리되지 않으면 <a href="mailto:lproof073@gmail.com">lproof073@gmail.com</a>으로 알려주세요.</p>
+        <p className="legal-help">직접 처리되지 않으면 <a href="mailto:this_is_laugh@naver.com">this_is_laugh@naver.com</a>으로 알려주세요.</p>
       </article>
     </main>
   );

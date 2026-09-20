@@ -25,7 +25,7 @@ export function UnsubscribeForm() {
       const result = (await response.json()) as { message: string };
       setMessage(result.message);
     } catch {
-      setMessage("처리하지 못했어요. lproof073@gmail.com으로 해지를 요청해주세요.");
+      setMessage("처리하지 못했어요. this_is_laugh@naver.com으로 해지를 요청해주세요.");
     } finally {
       setPending(false);
     }

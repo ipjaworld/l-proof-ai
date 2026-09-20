@@ -26,11 +26,34 @@ export const subscribers = sqliteTable(
     notificationError: text("notification_error"),
     notificationLastAttemptAt: text("notification_last_attempt_at"),
     notificationAttempts: integer("notification_attempts").notNull().default(0),
+    notificationEmailId: text("notification_email_id"),
+    notificationDeliveryStatus: text("notification_delivery_status"),
+    notificationDeliveredAt: text("notification_delivered_at"),
+    notificationBouncedAt: text("notification_bounced_at"),
+    notificationComplainedAt: text("notification_complained_at"),
+    notificationEventUpdatedAt: text("notification_event_updated_at"),
     lastAppliedAt: text("last_applied_at").notNull(),
   },
   (table) => [
     uniqueIndex("idx_subscribers_normalized_email").on(table.normalizedEmail),
     index("idx_subscribers_status").on(table.status),
+  ],
+);
+
+export const emailDeliveryEvents = sqliteTable(
+  "email_delivery_events",
+  {
+    id: text("id").primaryKey(),
+    emailId: text("email_id").notNull(),
+    type: text("type").notNull(),
+    recipient: text("recipient"),
+    eventCreatedAt: text("event_created_at").notNull(),
+    receivedAt: text("received_at").notNull(),
+    payload: text("payload").notNull(),
+  },
+  (table) => [
+    index("idx_email_delivery_events_email_id").on(table.emailId),
+    index("idx_email_delivery_events_type").on(table.type),
   ],
 );
 

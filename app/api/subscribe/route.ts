@@ -58,7 +58,12 @@ export async function POST(request: Request) {
         createdAt: subscriber.created_at,
         kind: "subscribe",
       });
-      await setNotificationResult(subscriber.id, notification.status, notification.error);
+      await setNotificationResult(
+        subscriber.id,
+        notification.status,
+        notification.error,
+        notification.emailId,
+      );
     }
     if (Math.random() < 0.05) await cleanupOldRateLimits();
     return success();
@@ -77,7 +82,7 @@ export async function POST(request: Request) {
     }
     console.error("subscription_failed", error);
     return NextResponse.json(
-      { ok: false, message: "신청을 저장하지 못했어요. 잠시 뒤 다시 시도하거나 lproof073@gmail.com으로 알려주세요." },
+      { ok: false, message: "신청을 저장하지 못했어요. 잠시 뒤 다시 시도하거나 this_is_laugh@naver.com으로 알려주세요." },
       { status: 500 },
     );
   }

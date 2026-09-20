@@ -52,7 +52,12 @@ export async function POST(request: Request) {
         createdAt: new Date().toISOString(),
         kind: "unsubscribe",
       });
-      await setNotificationResult(subscriber.id, notification.status, notification.error);
+      await setNotificationResult(
+        subscriber.id,
+        notification.status,
+        notification.error,
+        notification.emailId,
+      );
     }
     return success();
   } catch (error) {
@@ -70,7 +75,7 @@ export async function POST(request: Request) {
     }
     console.error("unsubscribe_failed", error);
     return NextResponse.json(
-      { ok: false, message: "처리하지 못했어요. lproof073@gmail.com으로 해지를 요청해주세요." },
+      { ok: false, message: "처리하지 못했어요. this_is_laugh@naver.com으로 해지를 요청해주세요." },
       { status: 500 },
     );
   }

@@ -52,7 +52,7 @@ export function SignupForm({ placement = "hero" }: { placement?: "hero" | "foote
     } catch {
       const result = {
         ok: false,
-        message: "네트워크 상태를 확인한 뒤 다시 시도해주세요. 문제가 계속되면 lproof073@gmail.com으로 알려주세요.",
+        message: "네트워크 상태를 확인한 뒤 다시 시도해주세요. 문제가 계속되면 this_is_laugh@naver.com으로 알려주세요.",
       };
       setMessage(result.message);
       setState("error");

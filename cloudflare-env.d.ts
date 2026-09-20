@@ -5,6 +5,7 @@ declare namespace Cloudflare {
     RESEND_API_KEY?: string;
     OPERATOR_NOTIFICATION_EMAIL?: string;
     EMAIL_FROM?: string;
+    RESEND_WEBHOOK_SECRET?: string;
     RATE_LIMIT_SALT?: string;
   }
 }

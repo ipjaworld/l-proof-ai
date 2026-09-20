@@ -90,7 +90,7 @@ export const siteContent = {
     showQuarterlyRescore: false,
   },
   links: {
-    contact: "mailto:lproof073@gmail.com",
+    contact: "mailto:this_is_laugh@naver.com",
     repository: null,
   },
 } as const;

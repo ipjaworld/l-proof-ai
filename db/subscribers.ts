@@ -118,16 +118,20 @@ export async function setNotificationResult(
   id: string,
   status: "sent" | "not-configured" | "failed" | "deferred",
   error?: string,
+  emailId?: string,
 ) {
   const now = new Date().toISOString();
   await database()
     .prepare(
       `UPDATE subscribers
        SET "notification_status" = ?, "notification_error" = ?,
-           "notification_last_attempt_at" = ?, "notification_attempts" = "notification_attempts" + 1
+           "notification_last_attempt_at" = ?, "notification_attempts" = "notification_attempts" + 1,
+           "notification_email_id" = COALESCE(?, "notification_email_id"),
+           "notification_delivery_status" = CASE WHEN ? IS NOT NULL THEN 'sent' ELSE "notification_delivery_status" END,
+           "notification_event_updated_at" = CASE WHEN ? IS NOT NULL THEN ? ELSE "notification_event_updated_at" END
        WHERE "id" = ?`,
     )
-    .bind(status, error?.slice(0, 300) ?? null, now, id)
+    .bind(status, error?.slice(0, 300) ?? null, now, emailId ?? null, emailId ?? null, emailId ?? null, now, id)
     .run();
 }
 

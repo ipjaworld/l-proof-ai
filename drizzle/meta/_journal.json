@@ -15,6 +15,13 @@
       "when": 1789179000000,
       "tag": "0001_notification_retry_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790000000000,
+      "tag": "0002_email_delivery_tracking",
+      "breakpoints": true
     }
   ]
 }
