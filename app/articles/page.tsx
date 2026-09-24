@@ -42,7 +42,11 @@ export default async function ArticlesPage() {
         ) : articles.map((article) => (
           <article className="archive-row" key={article.id}>
             <div className="archive-row-meta">
-              <span>{article.editionNumber ? `ISSUE ${String(article.editionNumber).padStart(2, "0")}` : "L‑PROOF‑AI"}</span>
+              <span>{article.editionNumber === 0
+                ? "ISSUE 00 · PILOT"
+                : article.editionNumber !== null
+                  ? `ISSUE ${String(article.editionNumber).padStart(2, "0")}`
+                  : "L‑PROOF‑AI"}</span>
               <time dateTime={article.publishedAt}>{dateFormatter.format(new Date(article.publishedAt))}</time>
               <span>PROOF LEVEL {String(article.proofLevel).padStart(2, "0")}</span>
             </div>

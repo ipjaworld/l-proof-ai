@@ -36,6 +36,13 @@
       "when": 1790241665000,
       "tag": "0004_article_publication",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790241666000,
+      "tag": "0005_archive_pilot_issue",
+      "breakpoints": true
     }
   ]
 }

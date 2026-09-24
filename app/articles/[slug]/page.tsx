@@ -76,7 +76,11 @@ export default async function ArticlePage({ params }: Props) {
         </nav>
         <header className="article-detail-header">
           <p>
-            {article.editionNumber ? `ISSUE ${String(article.editionNumber).padStart(2, "0")} · ` : ""}
+            {article.editionNumber === 0
+              ? "ISSUE 00 · PILOT · "
+              : article.editionNumber !== null
+                ? `ISSUE ${String(article.editionNumber).padStart(2, "0")} · `
+                : ""}
             PROOF LEVEL {String(article.proofLevel).padStart(2, "0")}
           </p>
           <h1>{article.title}</h1>
