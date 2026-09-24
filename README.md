@@ -105,7 +105,7 @@ Cloudflare Worker의 Cron Trigger는 다음 시각에 실행됩니다. 설정은
 | Email | Resend HTTP API로 검토 메일, 해지 알림, 브리핑 발송 |
 | Delivery feedback | 서명 검증한 Resend webhook으로 수신·반송·스팸 신고 상태 기록 |
 | UI | Tailwind CSS 4와 shadcn 기반 컴포넌트 |
-| CI | GitHub Actions에서 lint, type-check, production build 실행 |
+| CI/CD | GitHub Actions에서 검증하고, 수동 승인형 workflow로 production 배포 |
 
 주요 데이터는 다음 네 흐름으로 나뉩니다.
 
@@ -226,7 +226,7 @@ GET /api/public/v1/articles?limit=20&cursor=...
 ```bash
 npm run lint
 npm run typecheck
-npm run build
+npm run build:cloudflare
 ```
 
 현재 별도의 unit/integration test suite는 없습니다. CI도 위 세 검증을 실행합니다. production 이메일을 다루는 변경은 이 검증과 함께 수신자 수, 승인 상태, 발송 기록을 운영자가 확인해야 합니다.
@@ -251,13 +251,19 @@ npm run subscribers -- recipients
 
 ## Deployment
 
-production 도메인은 [l-proof-ai.xyz](https://l-proof-ai.xyz)이며 Cloudflare custom domain으로 연결됩니다. 저장소의 GitHub Actions는 `main` push와 pull request에서 품질 검증만 수행합니다. 실제 배포는 다음 스크립트로 정식 Next.js 빌드, OpenNext Worker 변환, remote D1 migration, Cloudflare deploy를 순서대로 실행합니다.
+production 도메인은 [l-proof-ai.xyz](https://l-proof-ai.xyz)이며 Cloudflare custom domain으로 연결됩니다. `main` push와 pull request는 품질 검증만 수행하고 production을 자동 변경하지 않습니다. 배포는 GitHub Actions의 `Deploy production`을 운영자가 수동 실행하면 검증, OpenNext build, D1 recovery 정보 기록, remote migration, Worker deploy, 읽기 전용 smoke test 순서로 진행됩니다.
+
+최초 설정과 운영·복구 절차는 [`docs/CD_ROLLOUT_REPORT.md`](docs/CD_ROLLOUT_REPORT.md)에 정리되어 있습니다. 로컬에서 같은 배포를 수행해야 할 때는 다음 명령을 사용할 수 있습니다.
 
 ```bash
 npm run deploy:cloudflare:full
 ```
 
-현재 저장소에는 `main` push만으로 production을 자동 배포하는 GitHub Actions workflow는 없습니다.
+배포 후 공개 화면만 다시 확인하려면 다음 명령을 실행합니다. 이메일 발송이나 데이터 변경은 수행하지 않습니다.
+
+```bash
+npm run smoke:production
+```
 
 ## Project status
 

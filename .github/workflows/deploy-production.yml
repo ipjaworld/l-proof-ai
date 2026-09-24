@@ -1,0 +1,63 @@
+name: Deploy production
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Verify and deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: production
+      url: https://l-proof-ai.xyz
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Verify deployment credentials
+        shell: bash
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "CLOUDFLARE_API_TOKEN is missing"; exit 1; }
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "CLOUDFLARE_ACCOUNT_ID is missing"; exit 1; }
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Build Cloudflare Worker
+        run: npm run build:cloudflare
+
+      - name: Record D1 recovery bookmark
+        run: node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 time-travel info l-proof-ai-production --config wrangler.jsonc
+
+      - name: Apply production D1 migrations
+        run: node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 migrations apply l-proof-ai-production --remote --config wrangler.jsonc
+
+      - name: Deploy Cloudflare Worker
+        run: node scripts/run-opennext.mjs deploy -- --keep-vars
+
+      - name: Run read-only production smoke test
+        run: npm run smoke:production
