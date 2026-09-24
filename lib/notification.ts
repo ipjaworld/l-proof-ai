@@ -1,4 +1,4 @@
-import { env } from "cloudflare:workers";
+import { getCloudflareEnv } from "@/lib/cloudflare-env";
 
 type NotificationRecord = {
   id: string;
@@ -35,7 +35,7 @@ function brandedSender(value: string) {
 }
 
 export async function notifyOperator(record: NotificationRecord): Promise<NotificationResult> {
-  const values = env as Cloudflare.Env;
+  const values = getCloudflareEnv();
   const apiKey = values.RESEND_API_KEY;
   const to = values.OPERATOR_NOTIFICATION_EMAIL;
   const from = values.EMAIL_FROM;

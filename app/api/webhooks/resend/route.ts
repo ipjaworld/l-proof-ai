@@ -1,5 +1,5 @@
-import { env } from "cloudflare:workers";
 import { NextResponse } from "next/server";
+import { getCloudflareEnv } from "@/lib/cloudflare-env";
 
 const trackedEvents = new Set([
   "email.delivered",
@@ -55,7 +55,7 @@ async function verifySignature(request: Request, payload: string, secret: string
 }
 
 export async function POST(request: Request) {
-  const values = env as Cloudflare.Env;
+  const values = getCloudflareEnv();
   if (!values.RESEND_WEBHOOK_SECRET || !values.DB) {
     return NextResponse.json({ ok: false }, { status: 503 });
   }
@@ -102,6 +102,19 @@ export async function POST(request: Request) {
       event.created_at,
       event.type,
       event.created_at,
+      receivedAt,
+      emailId,
+    ),
+    values.DB.prepare(
+      `UPDATE briefing_deliveries SET
+         "status" = ?,
+         "error" = CASE WHEN ? IN ('email.bounced', 'email.complained') THEN ? ELSE "error" END,
+         "updated_at" = ?
+       WHERE "email_id" = ?`,
+    ).bind(
+      event.type.slice("email.".length),
+      event.type,
+      event.type,
       receivedAt,
       emailId,
     ),

@@ -5,11 +5,8 @@ import {
   enforceRateLimit,
   hasBudget,
   requestKey,
-  setNotificationResult,
-  shouldNotifyOperator,
   upsertSubscriber,
 } from "@/db/subscribers";
-import { notifyOperator } from "@/lib/notification";
 import { readFormJson } from "@/lib/request";
 import { subscribeSchema } from "@/lib/validation";
 
@@ -35,36 +32,7 @@ export async function POST(request: Request) {
     await enforceRateLimit(await requestKey(request, "subscribe"));
     const withinDailyIntake = await consumeBudget("global:subscribe", 200, 24 * 60 * 60_000);
     if (!withinDailyIntake) return success();
-    const subscriber = await upsertSubscriber(parsed.data);
-    if (subscriber.isNew || shouldNotifyOperator(subscriber)) {
-      const withinNotificationBudget = await consumeBudget(
-        "global:operator-notification",
-        25,
-        24 * 60 * 60_000,
-      );
-      if (!withinNotificationBudget) {
-        await setNotificationResult(
-          subscriber.id,
-          "deferred",
-          "Daily operator notification budget reached",
-        );
-        return success();
-      }
-      const notification = await notifyOperator({
-        id: subscriber.id,
-        email: parsed.data.email,
-        name: parsed.data.name || null,
-        interests: parsed.data.interests,
-        createdAt: subscriber.created_at,
-        kind: "subscribe",
-      });
-      await setNotificationResult(
-        subscriber.id,
-        notification.status,
-        notification.error,
-        notification.emailId,
-      );
-    }
+    await upsertSubscriber(parsed.data);
     if (Math.random() < 0.05) await cleanupOldRateLimits();
     return success();
   } catch (error) {

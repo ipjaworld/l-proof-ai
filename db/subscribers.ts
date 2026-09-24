@@ -1,4 +1,4 @@
-import { env } from "cloudflare:workers";
+import { getCloudflareEnv } from "@/lib/cloudflare-env";
 
 export type Interest = "coding-agents" | "llm" | "agi";
 
@@ -21,12 +21,13 @@ type UpsertResult = {
 };
 
 function database() {
+  const env = getCloudflareEnv();
   if (!env.DB) throw new Error("D1 binding DB is unavailable");
   return env.DB;
 }
 
 export async function requestKey(request: Request, action: string) {
-  const values = env as Cloudflare.Env;
+  const values = getCloudflareEnv();
   const ip = request.headers.get("cf-connecting-ip") ?? "non-cloudflare";
   const salt = values.RATE_LIMIT_SALT ?? "l-proof-ai-local-preview";
   const bytes = new TextEncoder().encode([salt, action, ip].join("|"));

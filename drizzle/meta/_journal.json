@@ -22,6 +22,20 @@
       "when": 1790000000000,
       "tag": "0002_email_delivery_tracking",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790241664000,
+      "tag": "0003_briefing_workflow",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790241665000,
+      "tag": "0004_article_publication",
+      "breakpoints": true
     }
   ]
 }

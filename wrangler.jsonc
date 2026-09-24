@@ -2,12 +2,11 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "l-proof-ai",
   "account_id": "ffcaf616c0b78261504008ed69fcf9b4",
-  "main": "vinext/server/fetch-handler",
-  "compatibility_date": "2025-05-05",
+  "main": "worker.ts",
+  "compatibility_date": "2026-09-24",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
-    "directory": "dist/client",
-    "not_found_handling": "none",
+    "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
   "d1_databases": [
@@ -19,7 +18,18 @@
     }
   ],
   "vars": {
-    "OPERATOR_NOTIFICATION_EMAIL": "ipjaworld@gmail.com"
+    "OPERATOR_NOTIFICATION_EMAIL": "ipjaworld@gmail.com",
+    "EMAIL_FROM": "L-Proof-AI <notify@mail.l-proof-ai.xyz>",
+    "SITE_URL": "https://l-proof-ai.xyz"
+  },
+  "routes": [
+    {
+      "pattern": "l-proof-ai.xyz",
+      "custom_domain": true
+    }
+  ],
+  "triggers": {
+    "crons": ["0 21 * * SUN,WED", "50 23 * * SUN,WED", "0 0 * * *"]
   },
   "keep_vars": true,
   "observability": {

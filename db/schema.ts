@@ -63,3 +63,66 @@ export const requestLimits = sqliteTable("request_limits", {
   count: integer("count").notNull().default(1),
   updatedAt: integer("updated_at").notNull(),
 });
+
+export const briefingEditions = sqliteTable(
+  "briefing_editions",
+  {
+    id: text("id").primaryKey(),
+    editionNumber: integer("edition_number"),
+    slug: text("slug"),
+    subject: text("subject").notNull(),
+    previewText: text("preview_text").notNull(),
+    contentText: text("content_text").notNull(),
+    contentHtml: text("content_html").notNull(),
+    proofLevel: integer("proof_level").notNull().default(3),
+    tags: text("tags").notNull().default("[]"),
+    heroImageUrl: text("hero_image_url"),
+    contentHash: text("content_hash").notNull(),
+    status: text("status").notNull().default("draft"),
+    publicationStatus: text("publication_status").notNull().default("unpublished"),
+    reviewDueAt: text("review_due_at").notNull(),
+    scheduledPublishAt: text("scheduled_publish_at"),
+    publishedAt: text("published_at"),
+    publicationError: text("publication_error"),
+    scheduledSendAt: text("scheduled_send_at").notNull(),
+    approvalTokenHash: text("approval_token_hash").notNull(),
+    reviewEmailId: text("review_email_id"),
+    reviewSentAt: text("review_sent_at"),
+    approvedAt: text("approved_at"),
+    approvedContentHash: text("approved_content_hash"),
+    heldAt: text("held_at"),
+    sendStartedAt: text("send_started_at"),
+    sentAt: text("sent_at"),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("idx_briefing_editions_slug").on(table.slug),
+    uniqueIndex("idx_briefing_editions_number").on(table.editionNumber),
+    index("idx_briefing_editions_status_schedule").on(table.status, table.scheduledSendAt),
+    index("idx_briefing_editions_publication_schedule").on(
+      table.publicationStatus,
+      table.scheduledPublishAt,
+    ),
+  ],
+);
+
+export const briefingDeliveries = sqliteTable(
+  "briefing_deliveries",
+  {
+    id: text("id").primaryKey(),
+    editionId: text("edition_id").notNull().references(() => briefingEditions.id),
+    subscriberId: text("subscriber_id").notNull().references(() => subscribers.id),
+    recipient: text("recipient").notNull(),
+    emailId: text("email_id"),
+    status: text("status").notNull().default("pending"),
+    error: text("error"),
+    sentAt: text("sent_at"),
+    createdAt: text("created_at").notNull(),
+    updatedAt: text("updated_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("idx_briefing_deliveries_edition_subscriber").on(table.editionId, table.subscriberId),
+    index("idx_briefing_deliveries_email_id").on(table.emailId),
+  ],
+);

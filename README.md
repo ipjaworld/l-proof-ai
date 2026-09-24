@@ -86,9 +86,10 @@ Cloudflare Worker의 Cron Trigger는 다음 시각에 실행됩니다. 설정은
 | Cron | KST | 역할 |
 | --- | --- | --- |
 | `0 21 * * SUN,WED` | 월·목 06:00 | 마감된 원고 보류 처리와 발송 가능 원고 점검 |
+| `50 23 * * SUN,WED` | 월·목 08:50 | 승인된 원고의 예약 웹 공개 처리 |
 | `0 0 * * *` | 매일 09:00 | 마감된 원고 보류 처리와 예약 시각이 지난 승인본 발송 |
 
-랜딩에서 안내하는 정규 발행 시각은 월요일과 목요일 09:00 KST입니다. 다만 검토 마감과 실제 발송 시각은 원고 등록 요청의 `reviewDueAt`, `scheduledSendAt` 값으로 저장되며 코드에 특정 요일로 고정되어 있지 않습니다. Cron은 실행 시점마다 마감된 미승인 원고를 `held`로 바꾸고, 발송 시각이 지난 `approved` 원고를 처리합니다.
+랜딩에서 안내하는 정규 발행 시각은 월요일과 목요일 09:00 KST입니다. 원고에는 `reviewDueAt`, `scheduledPublishAt`, `scheduledSendAt`을 각각 저장합니다. 권장 운영값은 웹 공개 08:50 KST, 이메일 발송 09:00 KST입니다. Cron은 마감된 미승인 원고를 `held`로 바꾸고, 승인 해시가 일치하는 원고를 먼저 웹에 공개한 뒤 공개가 완료된 원고만 발송합니다.
 
 초안 생성과 원고 등록을 시작하는 스케줄러는 이 저장소에 없습니다. 또한 `send_failed` 발송을 자동 재시도하는 별도 queue도 아직 구현되어 있지 않습니다.
 
@@ -97,7 +98,7 @@ Cloudflare Worker의 Cron Trigger는 다음 시각에 실행됩니다. 설정은
 | 영역 | 기술과 역할 |
 | --- | --- |
 | Web | Next.js 16 App Router, React 19, TypeScript |
-| Build/runtime adapter | Vinext와 Vite로 Next.js 애플리케이션을 Cloudflare에 실행 |
+| Build/runtime adapter | 정식 Next.js 빌드와 OpenNext Cloudflare 어댑터 |
 | API and scheduler | Cloudflare Worker가 HTTP API와 Cron Trigger 처리 |
 | Storage | Cloudflare D1에 구독자, 원고, 발송과 webhook 이벤트 저장 |
 | Schema | Drizzle ORM schema와 SQL migration |
@@ -109,7 +110,7 @@ Cloudflare Worker의 Cron Trigger는 다음 시각에 실행됩니다. 설정은
 주요 데이터는 다음 네 흐름으로 나뉩니다.
 
 - `subscribers`: 동의, 관심 분야, 승인/거절/수신거부 상태와 마지막 발송 시각
-- `briefing_editions`: 원고, 콘텐츠 해시, 검토 마감, 예약 시각과 승인 상태
+- `briefing_editions`: 한 회차의 원문, slug, 공개 메타데이터, 콘텐츠 해시, 검토·공개·발송 상태. 웹과 이메일의 단일 원본
 - `briefing_deliveries`: edition과 subscriber별 개별 발송 및 실패 상태
 - `email_delivery_events`: 서명 검증을 통과한 Resend webhook 원문과 이벤트 시각
 
@@ -120,6 +121,8 @@ Cloudflare Worker의 Cron Trigger는 다음 시각에 실행됩니다. 설정은
 | 경로 | 용도 |
 | --- | --- |
 | `/` | 랜딩과 구독 신청 |
+| `/articles` | 공개된 L-Proof-AI 아티클 목록 |
+| `/articles/[slug]` | 개별 아티클의 canonical 원문 |
 | `/privacy` | 개인정보 처리방침 |
 | `/unsubscribe` | 수신거부 |
 | `POST /api/subscribe` | 구독 신청 저장 |
@@ -127,6 +130,7 @@ Cloudflare Worker의 Cron Trigger는 다음 시각에 실행됩니다. 설정은
 | `POST /api/briefings` | 관리자 인증 후 검토할 고정본 등록 |
 | `/api/briefings/approve` | 검토 링크와 최종 승인 확인 |
 | `/api/subscribers/review` | 검토 메일에서 구독자 개별 승인/보류 |
+| `GET /api/public/v1/articles` | HETRICH 등 외부 소비자를 위한 공개 아티클 목록 |
 | `POST /api/webhooks/resend` | Resend 전송 이벤트 수신 |
 
 구독 신청은 이메일을 소문자로 정규화하고 unique index와 upsert로 중복 row를 방지합니다. 동일 IP는 작업별 10분에 5회로 제한되며, 구독 접수는 전체 24시간당 200건으로 제한됩니다. 수신거부 알림은 24시간당 25건의 외부 이메일 상한을 가집니다. 신청 저장 API는 현재 신규 신청마다 별도 운영자 알림을 보내지 않고, 다음 원고 검토 메일에 최대 100명의 `pending` 구독자를 포함합니다.
@@ -143,20 +147,44 @@ Cloudflare Worker의 Cron Trigger는 다음 시각에 실행됩니다. 설정은
 git clone https://github.com/ipjaworld/l-proof-ai.git
 cd l-proof-ai
 npm install
-npm run build
-node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 migrations apply DB --local --config wrangler.jsonc --persist-to .wrangler/state
+npm run db:migrate:local
+npm run article:seed-local
 npm run dev
 ```
 
-개발 서버의 기본 주소는 `http://localhost:4000`입니다. Cloudflare에 가까운 로컬 Worker 환경을 확인하려면 build 후 다음 명령을 사용합니다.
+개발 서버의 기본 주소는 `http://localhost:3000`입니다. `npm run dev`는 정식 Next.js 개발 서버를 사용하며, OpenNext가 로컬 D1 binding을 연결합니다.
+
+샘플 데이터가 들어가면 다음 주소에서 목록, 상세, 공개 API를 확인할 수 있습니다.
+
+```text
+http://localhost:3000/articles
+http://localhost:3000/articles/agent-approval-lines-become-the-product
+http://localhost:3000/api/public/v1/articles
+```
+
+`article:seed-local`은 로컬 D1에만 샘플 아티클을 넣고 발송 시각을 먼 미래로 설정합니다. 실제 구독자에게 이메일을 보내지 않습니다. 다른 Markdown 파일을 확인하려면 파일 경로를 인자로 전달할 수 있습니다.
 
 ```bash
-npm run start
+npm run article:seed-local -- path/to/article.md
 ```
+
+Cloudflare production runtime과 같은 형태를 확인하려면 OpenNext Worker 프리뷰를 실행합니다. 이 명령은 정식 Next.js 빌드와 OpenNext 변환을 수행한 뒤 기본적으로 `http://127.0.0.1:8787`에서 Worker를 시작합니다.
+
+```bash
+npm run preview
+```
+
+프리뷰를 실행한 상태에서 별도 터미널을 열어 예약 공개 상태 전이를 검증할 수 있습니다. 검증 스크립트는 전용 테스트 row를 만들고, 공개 전 404 → scheduled trigger → 공개 후 200 → 공개 API 포함을 확인한 뒤 해당 row만 삭제합니다.
+
+```bash
+npm run article:verify-local
+```
+
+Windows에서는 OpenNext가 WSL을 권장한다는 경고를 출력할 수 있습니다. 이 저장소는 Windows 로컬 프리뷰까지 검증하지만, CI와 production 빌드는 Linux 환경을 권장합니다.
 
 ### Environment variables
 
-`.env.example`에는 secret 값 없이 키 이름만 유지합니다. 로컬 값은 Git에 포함되지 않는 환경 파일에 두고, production 값은 Cloudflare variable 또는 secret으로 관리합니다.
+`.env.example`과 `.dev.vars.example`에는 secret 값 없이 키 이름만 유지합니다. `next dev`와 Worker 프리뷰에서 필요한 Cloudflare secret은 `.dev.vars.example`을 `.dev.vars`로 복사한 뒤 입력합니다. 이 파일은 Git에서 제외됩니다. production 값은 Cloudflare variable 또는 secret으로 관리합니다.
 
 | 변수 | 역할 |
 | --- | --- |
@@ -166,9 +194,32 @@ npm run start
 | `RESEND_WEBHOOK_SECRET` | Svix 형식의 Resend webhook 서명 검증 |
 | `BRIEFING_ADMIN_SECRET` | `POST /api/briefings` Bearer 인증 |
 | `RATE_LIMIT_SALT` | IP 기반 rate-limit key 해싱 |
-| `SITE_URL` | `.env.example`에 예약되어 있으나 현재 애플리케이션 코드에서는 사용하지 않음 |
+| `SITE_URL` | 이메일의 웹 원문 링크를 만드는 canonical origin |
 
-`BRIEFING_ADMIN_SECRET`은 현재 코드가 요구하지만 `.env.example`에는 아직 추가되지 않은 항목입니다. production에는 반드시 secret으로 설정해야 하며 브라우저 번들, 로그, 문서에 값을 기록하지 않습니다.
+`BRIEFING_ADMIN_SECRET`은 production에서 반드시 secret으로 설정해야 하며 브라우저 번들, 로그, 문서에 값을 기록하지 않습니다.
+
+## Publication flow
+
+하나의 `briefing_editions` row가 웹 원문과 이메일 고정본을 함께 소유합니다. HETRICH는 D1이나 관리자 API에 접근하지 않고 공개 API만 읽습니다.
+
+```mermaid
+flowchart LR
+    A[수동 원고 등록] --> B[운영자 검토]
+    B --> C[콘텐츠 해시 승인]
+    C --> D[예약 웹 공개]
+    D --> E[/articles/slug]
+    D --> F[공개 목록 API]
+    F --> G[HETRICH Insights]
+    E --> H[공개 확인 뒤 이메일 발송]
+```
+
+공개 API는 `publication_status = published`이고 `published_at`이 현재 시각 이전인 row만 반환합니다. 응답에는 제목, 요약, 회차, 발행일, Proof Level, 태그, 이미지와 canonical URL만 포함되며 초안 본문, 승인 토큰, 구독자 및 발송 정보는 포함하지 않습니다.
+
+```http
+GET /api/public/v1/articles?limit=20&cursor=...
+```
+
+목록 응답에는 `Cache-Control`, `ETag`과 다음 페이지용 `nextCursor`가 포함됩니다. 공개 데이터이므로 API key는 사용하지 않습니다. 상세 원문은 L-Proof-AI에서만 제공하며 HETRICH는 목록 카드가 canonical URL을 가리키도록 구현합니다.
 
 ### Checks
 
@@ -200,7 +251,7 @@ npm run subscribers -- recipients
 
 ## Deployment
 
-production 도메인은 [l-proof-ai.xyz](https://l-proof-ai.xyz)이며 Cloudflare custom domain으로 연결됩니다. 저장소의 GitHub Actions는 `main` push와 pull request에서 품질 검증만 수행합니다. 실제 배포는 다음 스크립트로 build, remote D1 migration, Cloudflare deploy를 실행합니다.
+production 도메인은 [l-proof-ai.xyz](https://l-proof-ai.xyz)이며 Cloudflare custom domain으로 연결됩니다. 저장소의 GitHub Actions는 `main` push와 pull request에서 품질 검증만 수행합니다. 실제 배포는 다음 스크립트로 정식 Next.js 빌드, OpenNext Worker 변환, remote D1 migration, Cloudflare deploy를 순서대로 실행합니다.
 
 ```bash
 npm run deploy:cloudflare:full

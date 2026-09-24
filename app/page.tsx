@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { NoiseAtNight } from "@/components/noise-at-night";
 import { SignupForm } from "@/components/signup-form";
 import { LStamp } from "@/components/l-stamp";
@@ -11,17 +12,27 @@ import {
   SiteFooter,
   WhyLSection,
 } from "@/components/landing-sections";
+import { LatestArticles } from "@/components/latest-articles";
+
+export const dynamic = "force-dynamic";
 
 export default function Home() {
   return (
     <main>
       <section className="hero" aria-labelledby="hero-title">
         <header className="site-header">
-          <a className="brand" href="#top" aria-label="L-Proof-AI 홈">
+          <Link className="brand" href="/" aria-label="L-Proof-AI 홈" prefetch={false}>
             <LStamp size="small" />
             <span>L-Proof-AI</span>
-          </a>
-          <p className="issue-time">MON · THU / 09:00</p>
+          </Link>
+          <div className="header-actions">
+            <nav aria-label="주 메뉴">
+              <Link href="/articles" prefetch={false}>Articles</Link>
+              <a href="#person-title">About</a>
+              <a href="#signup-title">Subscribe</a>
+            </nav>
+            <p className="issue-time">MON · THU / 09:00</p>
+          </div>
         </header>
 
         <div className="hero-grid" id="top">
@@ -69,6 +80,7 @@ export default function Home() {
       <PersonSection />
       <LoopSection />
       <BriefAnatomySection />
+      <LatestArticles />
       <WhyLSection />
       <ReceiveSection />
       <FinalSignupSection />
