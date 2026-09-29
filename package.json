@@ -15,8 +15,9 @@
     "preview": "node scripts/run-opennext.mjs build && node scripts/run-opennext.mjs preview",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern .open-next --ignore-pattern .wrangler --ignore-pattern .sites-runtime --ignore-pattern cloudflare-env.d.ts",
     "typecheck": "tsc --noEmit",
-    "deploy:cloudflare": "npm run build:cloudflare && node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 migrations apply l-proof-ai-production --remote --config wrangler.jsonc && node scripts/run-opennext.mjs deploy -- --keep-vars",
-    "deploy:cloudflare:full": "npm run deploy:cloudflare",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "deploy:cloudflare": "npm run build:cloudflare && node scripts/run-opennext.mjs deploy -- --keep-vars",
+    "deploy:cloudflare:full": "npm run build:cloudflare && node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 migrations apply l-proof-ai-production --remote --config wrangler.jsonc && node scripts/run-opennext.mjs deploy -- --keep-vars",
     "upload:cloudflare": "npm run build:cloudflare && node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 migrations apply l-proof-ai-production --remote --config wrangler.jsonc && node scripts/run-opennext.mjs upload -- --keep-vars",
     "cf:typegen": "node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "subscribers": "node scripts/subscribers.mjs",
@@ -24,7 +25,8 @@
     "db:migrate:local": "node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 migrations apply DB --local --config wrangler.jsonc",
     "article:seed-local": "node scripts/seed-local-article.mjs",
     "article:verify-local": "node scripts/verify-publication-local.mjs",
-    "article:publish-issue-02": "node scripts/send-second-edition-now.mjs"
+    "article:publish-issue-02": "node scripts/send-second-edition-now.mjs",
+    "article:schedule-issue-03": "node scripts/schedule-third-edition.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

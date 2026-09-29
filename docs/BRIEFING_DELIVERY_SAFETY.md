@@ -10,6 +10,7 @@ Subscriber delivery is intentionally one-to-one. These rules are product invaria
 - Create one `briefing_deliveries` row per edition and subscriber.
 - Make one Resend API request per delivery row.
 - Put exactly one address in `to`.
+- When an edition has multiple recipients, distribute their individual Resend `scheduled_at` values from the edition's scheduled send time through the following five minutes. The first recipient starts at the scheduled time and the last is no later than five minutes afterward.
 - Never use `cc`, `bcc`, a comma-separated address, or a multi-address `to` array.
 - Give every subscriber delivery its own idempotency key and Resend email ID.
 - A failure for one subscriber must not expose, merge, or alter another subscriber's delivery.

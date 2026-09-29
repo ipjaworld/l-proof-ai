@@ -2,9 +2,8 @@
 
 import { FormEvent, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
-export function UnsubscribeForm() {
+export function UnsubscribeForm({ subscriber, token }: { subscriber: string; token: string }) {
   const id = useId();
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
@@ -16,11 +15,10 @@ export function UnsubscribeForm() {
     setPending(true);
     setMessage("");
     try {
-      const data = new FormData(form);
       const response = await fetch("/api/unsubscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: data.get("email"), website: data.get("website") }),
+        body: JSON.stringify({ subscriber, token, website: "" }),
       });
       const result = (await response.json()) as { message: string };
       setMessage(result.message);
@@ -33,12 +31,11 @@ export function UnsubscribeForm() {
 
   return (
     <form className="unsubscribe-form" onSubmit={submit} noValidate>
-      <label htmlFor={id}>구독할 때 사용한 이메일</label>
+      <label htmlFor={id}>이 링크에 연결된 브리핑 구독을 해지합니다.</label>
       <div className="signup-row">
-        <Input id={id} name="email" type="email" required placeholder="you@example.com" className="signup-input" />
-        <Button type="submit" className="signup-button" disabled={pending}>{pending ? "처리 중…" : "수신거부"}</Button>
+        <input id={id} type="hidden" name="subscriber" value={subscriber} />
+        <Button type="submit" className="signup-button" disabled={pending}>{pending ? "처리 중…" : "수신거부 확인"}</Button>
       </div>
-      <div className="honeypot" aria-hidden="true"><label>웹사이트<input name="website" tabIndex={-1} autoComplete="off" /></label></div>
       <p className="form-message" role="status" aria-live="polite">{message}</p>
     </form>
   );

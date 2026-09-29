@@ -20,7 +20,8 @@
   "vars": {
     "OPERATOR_NOTIFICATION_EMAIL": "ipjaworld@gmail.com",
     "EMAIL_FROM": "L-Proof-AI <notify@mail.l-proof-ai.xyz>",
-    "SITE_URL": "https://l-proof-ai.xyz"
+    "SITE_URL": "https://l-proof-ai.xyz",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAFI75J3bbgAWaPnM"
   },
   "routes": [
     {

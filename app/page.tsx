@@ -13,10 +13,12 @@ import {
   WhyLSection,
 } from "@/components/landing-sections";
 import { LatestArticles } from "@/components/latest-articles";
+import { getCloudflareEnv } from "@/lib/cloudflare-env";
 
 export const dynamic = "force-dynamic";
 
 export default function Home() {
+  const turnstileSiteKey = getCloudflareEnv().TURNSTILE_SITE_KEY ?? "";
   return (
     <main>
       <section className="hero" aria-labelledby="hero-title">
@@ -51,7 +53,7 @@ export default function Home() {
               아침 9시엔 확인된 것만.
             </h1>
             <p className="hero-description">{siteContent.hero.description}</p>
-            <SignupForm />
+            <SignupForm turnstileSiteKey={turnstileSiteKey} />
             <p className="form-footnote">{siteContent.hero.footnote}</p>
           </div>
 
@@ -83,7 +85,7 @@ export default function Home() {
       <LatestArticles />
       <WhyLSection />
       <ReceiveSection />
-      <FinalSignupSection />
+      <FinalSignupSection turnstileSiteKey={turnstileSiteKey} />
       <SiteFooter />
     </main>
   );

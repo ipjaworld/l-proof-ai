@@ -70,6 +70,16 @@ export async function enforceRateLimit(key: string, limit = 5, windowMs = 10 * 6
   if (!(await consumeBudget(key, limit, windowMs))) throw new Error("RATE_LIMITED");
 }
 
+export async function emailCooldownKey(normalizedEmail: string) {
+  const values = getCloudflareEnv();
+  const salt = values.RATE_LIMIT_SALT ?? "l-proof-ai-local-preview";
+  const bytes = new TextEncoder().encode([salt, "subscribe-email", normalizedEmail].join("|"));
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return `subscribe-email:${Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("")}`;
+}
+
 export async function upsertSubscriber(input: SubscriptionInput) {
   const now = new Date().toISOString();
   const id = crypto.randomUUID();
@@ -143,16 +153,33 @@ export function shouldNotifyOperator(subscriber: UpsertResult, now = Date.now())
   return !Number.isFinite(lastAttempt) || now - lastAttempt >= 10 * 60_000;
 }
 
-export async function unsubscribeSubscriber(normalizedEmail: string) {
+export async function findSubscriberForUnsubscribe(id: string) {
+  return database()
+    .prepare(
+      `SELECT "id", "email", "normalized_email", "name", "interests", "status"
+       FROM subscribers WHERE "id" = ?`,
+    )
+    .bind(id)
+    .first<{
+      id: string;
+      email: string;
+      normalized_email: string;
+      name: string | null;
+      interests: string;
+      status: string;
+    }>();
+}
+
+export async function unsubscribeSubscriber(id: string) {
   const now = new Date().toISOString();
   const result = await database()
     .prepare(
       `UPDATE subscribers
        SET "status" = 'unsubscribed', "unsubscribed_at" = ?
-       WHERE "normalized_email" = ? AND "status" != 'unsubscribed'
+       WHERE "id" = ? AND "status" != 'unsubscribed'
        RETURNING "id", "email", "name", "interests"`,
     )
-    .bind(now, normalizedEmail)
+    .bind(now, id)
     .first<{ id: string; email: string; name: string | null; interests: string }>();
   return result ?? null;
 }

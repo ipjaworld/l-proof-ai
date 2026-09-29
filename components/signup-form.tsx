@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { LStamp } from "@/components/l-stamp";
+import Script from "next/script";
 
 type Interest = "coding-agents" | "llm" | "agi";
 type FormState = "idle" | "pending" | "success" | "error";
@@ -25,9 +26,16 @@ type SubscribePayload = {
   utmSource?: string;
   utmMedium?: string;
   utmCampaign?: string;
+  turnstileToken?: string;
 };
 
-export function SignupForm({ placement = "hero" }: { placement?: "hero" | "footer" }) {
+export function SignupForm({
+  placement = "hero",
+  turnstileSiteKey,
+}: {
+  placement?: "hero" | "footer";
+  turnstileSiteKey: string;
+}) {
   const emailId = useId();
   const consentId = useId();
   const [state, setState] = useState<FormState>("idle");
@@ -48,6 +56,7 @@ export function SignupForm({ placement = "hero" }: { placement?: "hero" | "foote
       setMessage(result.message);
       setState(result.ok ? "success" : "error");
       if (!response.ok && result.ok) setState("error");
+      if (!result.ok) window.turnstile?.reset();
       return result;
     } catch {
       const result = {
@@ -56,11 +65,13 @@ export function SignupForm({ placement = "hero" }: { placement?: "hero" | "foote
       };
       setMessage(result.message);
       setState("error");
+      window.turnstile?.reset();
       return result;
     }
   }, []);
 
   useEffect(() => {
+    if (turnstileSiteKey) return;
     const modelContext = (
       document as Document & {
         modelContext?: {
@@ -115,7 +126,7 @@ export function SignupForm({ placement = "hero" }: { placement?: "hero" | "foote
       ),
     ).catch(() => undefined);
     return () => lifecycle.abort();
-  }, [placement, submit]);
+  }, [placement, submit, turnstileSiteKey]);
 
   function toggleInterest(value: Interest, checked: boolean) {
     setInterests((current) =>
@@ -144,6 +155,7 @@ export function SignupForm({ placement = "hero" }: { placement?: "hero" | "foote
       utmSource: query.get("utm_source") ?? undefined,
       utmMedium: query.get("utm_medium") ?? undefined,
       utmCampaign: query.get("utm_campaign") ?? undefined,
+      turnstileToken: String(data.get("cf-turnstile-response") ?? ""),
     });
   }
 
@@ -161,6 +173,14 @@ export function SignupForm({ placement = "hero" }: { placement?: "hero" | "foote
 
   return (
     <form className="signup-form" onSubmit={handleSubmit} noValidate>
+      {turnstileSiteKey ? (
+        <>
+          <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="afterInteractive" />
+          <div className="cf-turnstile" data-sitekey={turnstileSiteKey} data-action="subscribe" />
+        </>
+      ) : (
+        <p className="form-message" role="status">보안 확인 설정이 필요해 현재 신청을 받을 수 없습니다.</p>
+      )}
       <div className="signup-row">
         <label className="sr-only" htmlFor={emailId}>이메일</label>
         <Input
@@ -176,7 +196,7 @@ export function SignupForm({ placement = "hero" }: { placement?: "hero" | "foote
           aria-describedby={emailId + "-message"}
           className="signup-input"
         />
-        <Button type="submit" className="signup-button" disabled={state === "pending"}>
+        <Button type="submit" className="signup-button" disabled={state === "pending" || !turnstileSiteKey}>
           {state === "pending" ? "접수 중…" : "브리핑 신청하기"}
         </Button>
       </div>

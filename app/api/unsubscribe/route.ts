@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import {
   consumeBudget,
   enforceRateLimit,
+  findSubscriberForUnsubscribe,
   requestKey,
   setNotificationResult,
   unsubscribeSubscriber,
@@ -9,6 +10,8 @@ import {
 import { notifyOperator } from "@/lib/notification";
 import { readFormJson } from "@/lib/request";
 import { unsubscribeSchema } from "@/lib/validation";
+import { getCloudflareEnv } from "@/lib/cloudflare-env";
+import { verifyUnsubscribeToken } from "@/lib/subscription-security";
 
 const success = () =>
   NextResponse.json({
@@ -23,13 +26,27 @@ export async function POST(request: Request) {
     const parsed = unsubscribeSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { ok: false, message: "이메일 주소를 다시 확인해주세요." },
+        { ok: false, message: "해지 링크가 올바르지 않아요. 최신 브리핑의 링크를 사용해주세요." },
         { status: 400 },
       );
     }
 
     await enforceRateLimit(await requestKey(request, "unsubscribe"));
-    const subscriber = await unsubscribeSubscriber(parsed.data.email);
+    const existing = await findSubscriberForUnsubscribe(parsed.data.subscriber);
+    const secret = getCloudflareEnv().UNSUBSCRIBE_TOKEN_SECRET;
+    const authorized = existing && await verifyUnsubscribeToken(
+      secret ?? "",
+      existing.id,
+      existing.normalized_email,
+      parsed.data.token,
+    );
+    if (!authorized) {
+      return NextResponse.json(
+        { ok: false, message: "해지 링크가 유효하지 않아요. 최신 브리핑의 링크를 사용하거나 이메일로 요청해주세요." },
+        { status: 403 },
+      );
+    }
+    const subscriber = await unsubscribeSubscriber(existing.id);
     if (subscriber) {
       const withinNotificationBudget = await consumeBudget(
         "global:operator-notification",

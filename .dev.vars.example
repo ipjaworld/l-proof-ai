@@ -1,5 +1,15 @@
+# Local OpenNext environment.
 NEXTJS_ENV=development
+
+# Use Cloudflare Turnstile test keys for local development; never reuse production keys.
+TURNSTILE_SITE_KEY=
+TURNSTILE_SECRET_KEY=
+
+# Generate independent, high-entropy values. Do not reuse either value elsewhere.
+UNSUBSCRIBE_TOKEN_SECRET=
+RATE_LIMIT_SALT=
+
+# Existing mail/admin secrets may also be required by the exercised flow.
 RESEND_API_KEY=
 RESEND_WEBHOOK_SECRET=
 BRIEFING_ADMIN_SECRET=
-RATE_LIMIT_SALT=

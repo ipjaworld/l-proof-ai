@@ -160,7 +160,7 @@ export function ReceiveSection() {
   );
 }
 
-export function FinalSignupSection() {
+export function FinalSignupSection({ turnstileSiteKey }: { turnstileSiteKey: string }) {
   return (
     <section className="final-signup" aria-labelledby="signup-title">
       <div>
@@ -168,7 +168,7 @@ export function FinalSignupSection() {
         <h2 id="signup-title">월요일 아침,<br />확인된 것만 받아보세요.</h2>
       </div>
       <div>
-        <SignupForm placement="footer" />
+        <SignupForm placement="footer" turnstileSiteKey={turnstileSiteKey} />
         <p className="form-footnote">{siteContent.hero.footnote}</p>
       </div>
     </section>

@@ -1,3 +1,5 @@
+import { createUnsubscribeToken } from "@/lib/subscription-security";
+
 type WorkerEnv = Cloudflare.Env;
 
 type EditionRow = {
@@ -94,6 +96,11 @@ function addWebVersionToEmail(html: string, url: string) {
   return html.replace(/(<body[^>]*>)/i, `$1${notice}`);
 }
 
+function addUnsubscribeToEmail(html: string, url: string) {
+  const footer = `<p style="margin:30px 0 0;color:#667085;font-size:12px;line-height:1.7">더 이상 받지 않으려면 <a href="${escapeHtml(url)}" style="color:#667085">수신거부를 확인</a>해주세요.</p>`;
+  return /<\/body>/i.test(html) ? html.replace(/<\/body>/i, `${footer}</body>`) : `${html}${footer}`;
+}
+
 export function brandedSender(value: string) {
   const address = value.match(/<([^<>]+)>/)?.[1]?.trim() ?? value.trim();
   return `L-Proof-AI <${address}>`;
@@ -101,7 +108,14 @@ export function brandedSender(value: string) {
 
 export async function sendWithResend(
   env: WorkerEnv,
-  input: { to: string; subject: string; text: string; html: string; idempotencyKey: string },
+  input: {
+    to: string;
+    subject: string;
+    text: string;
+    html: string;
+    idempotencyKey: string;
+    scheduledAt?: string;
+  },
 ) {
   if (!env.RESEND_API_KEY || !env.EMAIL_FROM) throw new Error("Email provider configuration is incomplete");
   const recipient = input.to.trim();
@@ -123,6 +137,7 @@ export async function sendWithResend(
       subject: input.subject,
       text: input.text,
       html: input.html,
+      ...(input.scheduledAt ? { scheduled_at: input.scheduledAt } : {}),
     }),
   });
   const body = await response.text();
@@ -302,7 +317,7 @@ async function sendEdition(env: WorkerEnv, edition: EditionRow, now: Date) {
   if (claimed.meta.changes !== 1) return { sent: 0, failed: 0, held: false };
 
   const subscribers = await env.DB.prepare(
-    `SELECT s.id, s.email FROM subscribers s
+    `SELECT s.id, s.email, s.normalized_email FROM subscribers s
      WHERE s.status = 'approved' AND s.unsubscribed_at IS NULL
        AND NOT EXISTS (
          SELECT 1
@@ -313,10 +328,12 @@ async function sendEdition(env: WorkerEnv, edition: EditionRow, now: Date) {
            AND d.status IN ('sent', 'delivered')
        )
      ORDER BY created_at ASC`,
-  ).bind(edition.content_hash).all<{ id: string; email: string }>();
+  ).bind(edition.content_hash).all<{ id: string; email: string; normalized_email: string }>();
   let sent = 0;
   let failed = 0;
-  for (const subscriber of subscribers.results) {
+  const deliveryWindowMs = 5 * 60 * 1000;
+  const deliveryStartMs = new Date(edition.scheduled_send_at).getTime();
+  for (const [index, subscriber] of subscribers.results.entries()) {
     const deliveryId = `${edition.id}:${subscriber.id}`;
     const createdAt = new Date().toISOString();
     const inserted = await env.DB.prepare(
@@ -327,20 +344,37 @@ async function sendEdition(env: WorkerEnv, edition: EditionRow, now: Date) {
     ).bind(deliveryId, edition.id, subscriber.id, subscriber.email, createdAt, createdAt).run();
     if (inserted.meta.changes !== 1) continue;
     try {
+      const unsubscribeToken = await createUnsubscribeToken(
+        env.UNSUBSCRIBE_TOKEN_SECRET ?? "",
+        subscriber.id,
+        subscriber.normalized_email,
+      );
+      const unsubscribeUrl = `${siteUrl(env)}/unsubscribe?subscriber=${encodeURIComponent(subscriber.id)}&token=${encodeURIComponent(unsubscribeToken)}`;
+      const deliverySlotMs = subscribers.results.length <= 1
+        ? deliveryStartMs
+        : deliveryStartMs + Math.round(deliveryWindowMs * index / (subscribers.results.length - 1));
+      const scheduledAt = deliverySlotMs > Date.now() + 5_000
+        ? new Date(deliverySlotMs).toISOString()
+        : undefined;
       const emailId = await sendWithResend(env, {
         to: subscriber.email,
         subject: edition.subject,
-        text: `웹에서 읽기: ${articleUrl(env, edition.slug)}\n\n${edition.content_text}`,
-        html: addWebVersionToEmail(edition.content_html, articleUrl(env, edition.slug)),
+        text: `웹에서 읽기: ${articleUrl(env, edition.slug)}\n\n${edition.content_text}\n\n수신거부: ${unsubscribeUrl}`,
+        html: addUnsubscribeToEmail(
+          addWebVersionToEmail(edition.content_html, articleUrl(env, edition.slug)),
+          unsubscribeUrl,
+        ),
         idempotencyKey: `briefing-${deliveryId}`,
+        scheduledAt,
       });
-      const deliveredAt = new Date().toISOString();
+      const acceptedAt = new Date().toISOString();
+      const effectiveSentAt = scheduledAt ?? acceptedAt;
       await env.DB.batch([
         env.DB.prepare(
           `UPDATE briefing_deliveries SET status = 'sent', email_id = ?, sent_at = ?, updated_at = ? WHERE id = ?`,
-        ).bind(emailId, deliveredAt, deliveredAt, deliveryId),
+        ).bind(emailId, effectiveSentAt, acceptedAt, deliveryId),
         env.DB.prepare("UPDATE subscribers SET last_sent_at = ? WHERE id = ?")
-          .bind(deliveredAt, subscriber.id),
+          .bind(effectiveSentAt, subscriber.id),
       ]);
       sent += 1;
     } catch (error) {

@@ -13,9 +13,16 @@ export const subscribeSchema = z.object({
   utmSource: optionalShortText,
   utmMedium: optionalShortText,
   utmCampaign: optionalShortText,
+  turnstileToken: z.string().trim().min(1).max(2048),
 });
 
 export const unsubscribeSchema = z.object({
-  email: z.string().trim().email().max(254).transform((value) => value.toLowerCase()),
+  subscriber: z.string().trim().min(1).max(128).regex(/^[A-Za-z0-9_-]+$/),
+  token: z.string().trim().regex(/^[a-f0-9]{64}$/),
   website: z.string().max(0).optional().or(z.literal("")),
+});
+
+export const approvalSchema = z.object({
+  edition: z.string().trim().min(1).max(128).regex(/^[A-Za-z0-9_-]+$/),
+  token: z.string().trim().min(32).max(256).regex(/^[A-Za-z0-9_-]+$/),
 });

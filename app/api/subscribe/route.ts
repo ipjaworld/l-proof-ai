@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import {
   cleanupOldRateLimits,
   consumeBudget,
+  emailCooldownKey,
   enforceRateLimit,
   hasBudget,
   requestKey,
@@ -9,6 +10,8 @@ import {
 } from "@/db/subscribers";
 import { readFormJson } from "@/lib/request";
 import { subscribeSchema } from "@/lib/validation";
+import { getCloudflareEnv } from "@/lib/cloudflare-env";
+import { verifyTurnstile } from "@/lib/turnstile";
 
 const success = () =>
   NextResponse.json({
@@ -28,10 +31,50 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!(await hasBudget("global:subscribe", 200, 24 * 60 * 60_000))) return success();
+    const turnstile = await verifyTurnstile(
+      getCloudflareEnv().TURNSTILE_SECRET_KEY,
+      parsed.data.turnstileToken,
+      request.headers.get("cf-connecting-ip"),
+      new URL(request.url).hostname,
+    );
+    if (!turnstile.ok) {
+      const unavailable = turnstile.reason === "not-configured" || turnstile.reason === "verification-unavailable";
+      return NextResponse.json(
+        {
+          ok: false,
+          message: unavailable
+            ? "보안 확인 서비스를 사용할 수 없어요. 잠시 뒤 다시 시도해주세요."
+            : "보안 확인에 실패했어요. 다시 확인한 뒤 신청해주세요.",
+        },
+        { status: unavailable ? 503 : 400 },
+      );
+    }
+
+    if (!(await hasBudget("global:subscribe", 200, 24 * 60 * 60_000))) {
+      return NextResponse.json(
+        { ok: false, message: "오늘 신청 접수 한도에 도달했어요. 내일 다시 시도해주세요." },
+        { status: 503, headers: { "retry-after": "3600" } },
+      );
+    }
     await enforceRateLimit(await requestKey(request, "subscribe"));
+    const cooldownAccepted = await consumeBudget(
+      await emailCooldownKey(parsed.data.email),
+      1,
+      10 * 60_000,
+    );
+    if (!cooldownAccepted) {
+      return NextResponse.json(
+        { ok: false, message: "같은 이메일의 신청이 이미 처리 중이에요. 10분 뒤 다시 시도해주세요." },
+        { status: 429, headers: { "retry-after": "600" } },
+      );
+    }
     const withinDailyIntake = await consumeBudget("global:subscribe", 200, 24 * 60 * 60_000);
-    if (!withinDailyIntake) return success();
+    if (!withinDailyIntake) {
+      return NextResponse.json(
+        { ok: false, message: "오늘 신청 접수 한도에 도달했어요. 내일 다시 시도해주세요." },
+        { status: 503, headers: { "retry-after": "3600" } },
+      );
+    }
     await upsertSubscriber(parsed.data);
     if (Math.random() < 0.05) await cleanupOldRateLimits();
     return success();
