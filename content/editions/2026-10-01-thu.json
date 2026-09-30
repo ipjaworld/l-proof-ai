@@ -1,0 +1,13 @@
+{
+  "source": "content/drafts/2026-09-30.md",
+  "id": "2026-10-01-thu",
+  "editionNumber": 4,
+  "slug": "define-agent-work-before-changing-models",
+  "previewText": "Sonnet 5.5와 GPT-6.1 Sol, Decisions API, GitHub Agentic Workflows를 모델 선택·판단 범위·실행 경계로 읽습니다.",
+  "proofLevel": 3,
+  "tags": ["models", "agents", "evaluation", "governance"],
+  "heroImageUrl": null,
+  "reviewDueAt": "2026-10-01T06:00:00+09:00",
+  "scheduledPublishAt": "2026-10-01T08:50:00+09:00",
+  "scheduledSendAt": "2026-10-01T09:00:00+09:00"
+}
