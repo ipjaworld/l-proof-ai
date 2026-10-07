@@ -1,0 +1,13 @@
+{
+  "source": "content/drafts/2026-10-07.md",
+  "id": "2026-10-08-thu",
+  "editionNumber": 6,
+  "slug": "work-remains-after-ai-answers",
+  "previewText": "ThinkingBox의 반복 평가, Vercel의 재판단, AutoSynthData의 검증기 시험으로 살펴보는 AI가 답한 뒤의 확인과 자동화의 경계.",
+  "proofLevel": 3,
+  "tags": ["agents", "evaluation", "workflow", "synthetic-data"],
+  "heroImageUrl": null,
+  "reviewDueAt": "2026-10-08T06:00:00+09:00",
+  "scheduledPublishAt": "2026-10-08T08:50:00+09:00",
+  "scheduledSendAt": "2026-10-08T09:00:00+09:00"
+}
