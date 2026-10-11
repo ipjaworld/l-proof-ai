@@ -1,0 +1,13 @@
+{
+  "source": "content/drafts/2026-10-12.md",
+  "id": "2026-10-12-mon",
+  "editionNumber": 7,
+  "slug": "ai-gets-a-company-email",
+  "previewText": "Gemini의 팀 계정, Haiku와 Sonnet의 가격 변화, Decisions 공개 베타, GitHub 비밀정보 탐지, Cursor 원격 제어. 일을 넓게 맡기기 위해 무엇을 작게 나눠야 할까.",
+  "proofLevel": 3,
+  "tags": ["agents", "models", "decisions", "security", "workflow"],
+  "heroImageUrl": null,
+  "reviewDueAt": "2026-10-12T06:00:00+09:00",
+  "scheduledPublishAt": "2026-10-12T08:50:00+09:00",
+  "scheduledSendAt": "2026-10-12T09:00:00+09:00"
+}
