@@ -1,0 +1,13 @@
+{
+  "source": "content/drafts/2026-10-15.md",
+  "id": "2026-10-15-thu",
+  "editionNumber": 8,
+  "slug": "the-morning-after-ai-worked-all-night",
+  "previewText": "Argon의 밤샘 개발, ColGrep의 검색 분담, Liquid의 로컬 모델, Cursor의 도구 연결, GitHub의 푸시 추적. AI의 제안을 받아들이고 거절한 이유는 다음 작업에 남을까.",
+  "proofLevel": 3,
+  "tags": ["agents", "coding", "models", "workflow"],
+  "heroImageUrl": null,
+  "reviewDueAt": "2026-10-15T06:00:00+09:00",
+  "scheduledPublishAt": "2026-10-15T08:50:00+09:00",
+  "scheduledSendAt": "2026-10-15T09:00:00+09:00"
+}
