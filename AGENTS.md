@@ -16,3 +16,14 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Wrangler와 원격 D1 직접 변경은 일상 발행 경로로 사용하지 않는다. 사용자가 명시적으로 대시보드 처리를 요청한 긴급 회차만 해당 경로를 사용하고 기록한다.
 - 발행은 KST 월·목 08:50 웹 공개, 09:00~09:05 수신자별 개별 분산 발송이다. 원고 승인 예약과 09:00에 생성되는 Resend 개별 예약을 구분해 보고한다.
 - 이번 4호 처리 기록은 `docs/ISSUE_04_SCHEDULING.md`, 재사용 절차는 `skills/schedule-l-proof-edition/SKILL.md`를 확인한다. 자동화 개선 완료 후 이 우선 과제 표기를 갱신한다.
+
+<!-- BEGIN:hetrich-wiki-codex -->
+## Codex의 HETRICH Wiki 조회
+
+- 개발·스튜디오 작업 시작 시 `hetrich-wiki` MCP의 `wiki_brief(target="studio")`와 `wiki_brief(target="l-proof")`로 현재 상태와 유효 결정을 확인한다. target이 studio이면 한 번만 호출한다.
+- 프로젝트 상태의 원본은 해당 저장소의 STATE·DECISIONS 등 정본 문서다. Wiki는 프로젝트 간 맥락과 결정의 색인이므로 필요한 원본 확인과 기존 인수인계 갱신 규칙을 유지한다.
+- 필요한 근거는 `wiki_search`와 `wiki_get`으로 확인한다. 승인 상태, 근거 유형, 기준일과 대체된 결정을 구분하고 불일치를 임의로 확정하지 않는다.
+- 재사용할 지식·결정 후보는 해당 MCP의 `wiki_propose`로 제안하며, 제안을 임의로 확정 사실로 승격하지 않는다. 제안 후 `wiki_validate` 결과를 확인한다.
+- 토큰 절감 자체를 목표로 정보를 생략하지 않는다. 측정은 큰 변경 뒤 정확도 회귀 확인용으로 사용한다.
+- MCP를 사용할 수 없으면 연결 실패를 알리고 `D:/2026_project/hetrich-wiki/hw.cmd` CLI를 사용할 수 있다. CLI에는 개발 작업 `--profile codex`, 취업 작업 `--profile codex-career`를 명시한다. 조회하지 않은 내용을 조회한 것으로 보고하지 않는다.
+<!-- END:hetrich-wiki-codex -->
