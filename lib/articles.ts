@@ -15,6 +15,7 @@ type ArticleRow = {
   hero_image_url: string | null;
   published_at: string;
   updated_at: string;
+  view_count?: number;
 };
 
 export type PublishedArticle = {
@@ -30,6 +31,7 @@ export type PublishedArticle = {
   publishedAt: string;
   updatedAt: string;
   url: string;
+  viewCount: number | null;
 };
 
 function database() {
@@ -61,6 +63,7 @@ function mapArticle(row: ArticleRow): PublishedArticle {
     publishedAt: row.published_at,
     updatedAt: row.updated_at,
     url: `${siteOrigin}/articles/${encodeURIComponent(row.slug)}`,
+    viewCount: row.view_count ?? null,
   };
 }
 
@@ -86,12 +89,14 @@ export function encodeArticleCursor(article: Pick<PublishedArticle, "publishedAt
     .replace(/=+$/, "");
 }
 
-export async function listPublishedArticles(options: { limit?: number; cursor?: string | null } = {}) {
+export async function listPublishedArticles(options: { limit?: number; cursor?: string | null; includeViewCounts?: boolean } = {}) {
   const limit = Math.max(1, Math.min(options.limit ?? 20, 50));
   const now = new Date().toISOString();
   const cursor = decodeCursor(options.cursor ?? null);
   const fields = `id, edition_number, slug, subject, preview_text, content_text, proof_level,
-    tags, hero_image_url, published_at, updated_at`;
+    tags, hero_image_url, published_at, updated_at${options.includeViewCounts ? `,
+    (SELECT COALESCE(SUM(view_count), 0) FROM page_view_daily
+     WHERE page_key = 'article:' || briefing_editions.slug) AS view_count` : ""}`;
   const query = cursor
     ? `SELECT ${fields} FROM briefing_editions
        WHERE publication_status = 'published' AND published_at <= ? AND slug IS NOT NULL
@@ -103,7 +108,16 @@ export async function listPublishedArticles(options: { limit?: number; cursor?: 
   const statement = cursor
     ? database().prepare(query).bind(now, cursor.publishedAt, cursor.publishedAt, cursor.id, limit + 1)
     : database().prepare(query).bind(now, limit + 1);
-  const result = await statement.all<ArticleRow>();
+  let result;
+  try {
+    result = await statement.all<ArticleRow>();
+  } catch (error) {
+    if (options.includeViewCounts) {
+      console.error("article_list_view_counts_unavailable", error);
+      return listPublishedArticles({ ...options, includeViewCounts: false });
+    }
+    throw error;
+  }
   const articles = result.results.slice(0, limit).map(mapArticle);
   return {
     articles,

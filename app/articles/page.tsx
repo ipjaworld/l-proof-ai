@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PublicationFooter, PublicationHeader } from "@/components/publication-shell";
 import { listPublishedArticles } from "@/lib/articles";
+import { SitePageTracker, ViewCount } from "@/components/view-count";
 
 export const dynamic = "force-dynamic";
 
@@ -24,9 +25,10 @@ const dateFormatter = new Intl.DateTimeFormat("ko-KR", {
 });
 
 export default async function ArticlesPage() {
-  const { articles } = await listPublishedArticles({ limit: 50 });
+  const { articles } = await listPublishedArticles({ limit: 50, includeViewCounts: true });
   return (
     <main className="publication-page">
+      <SitePageTracker page="articles" />
       <PublicationHeader />
       <header className="archive-hero">
         <p>L‑PROOF‑AI · PUBLISHED ARCHIVE</p>
@@ -49,6 +51,7 @@ export default async function ArticlesPage() {
                   : "L‑PROOF‑AI"}</span>
               <time dateTime={article.publishedAt}>{dateFormatter.format(new Date(article.publishedAt))}</time>
               <span>PROOF LEVEL {String(article.proofLevel).padStart(2, "0")}</span>
+              <ViewCount total={article.viewCount} />
             </div>
             <div>
               <h2><Link href={`/articles/${article.slug}`} prefetch={false}>{article.title}</Link></h2>

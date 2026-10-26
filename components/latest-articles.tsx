@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { listPublishedArticles } from "@/lib/articles";
+import { ViewCount } from "@/components/view-count";
 
 const dateFormatter = new Intl.DateTimeFormat("ko-KR", {
   timeZone: "Asia/Seoul",
@@ -11,7 +12,7 @@ const dateFormatter = new Intl.DateTimeFormat("ko-KR", {
 export async function LatestArticles() {
   let articles;
   try {
-    ({ articles } = await listPublishedArticles({ limit: 3 }));
+    ({ articles } = await listPublishedArticles({ limit: 3, includeViewCounts: true }));
   } catch {
     return null;
   }
@@ -34,6 +35,7 @@ export async function LatestArticles() {
             </p>
             <h3><Link href={`/articles/${article.slug}`} prefetch={false}>{article.title}</Link></h3>
             <p>{article.summary}</p>
+            <ViewCount total={article.viewCount} />
             <Link className="article-card-link" href={`/articles/${article.slug}`} prefetch={false}>원문 읽기 →</Link>
           </article>
         ))}

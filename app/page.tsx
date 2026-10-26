@@ -14,11 +14,17 @@ import {
 } from "@/components/landing-sections";
 import { LatestArticles } from "@/components/latest-articles";
 import { getCloudflareEnv } from "@/lib/cloudflare-env";
+import { SiteViewCount } from "@/components/view-count";
+import { getViewCounts } from "@/lib/views";
 
 export const dynamic = "force-dynamic";
 
-export default function Home() {
+export default async function Home() {
   const turnstileSiteKey = getCloudflareEnv().TURNSTILE_SITE_KEY ?? "";
+  const viewCounts = await getViewCounts().catch((error) => {
+    console.error("site_view_counts_unavailable", error);
+    return null;
+  });
   return (
     <main>
       <section className="hero" aria-labelledby="hero-title">
@@ -34,6 +40,7 @@ export default function Home() {
               <a href="#signup-title">Subscribe</a>
             </nav>
             <p className="issue-time">MON · THU / 09:00</p>
+            <SiteViewCount initial={viewCounts} />
           </div>
         </header>
 

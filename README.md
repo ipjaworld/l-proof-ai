@@ -23,6 +23,7 @@ AI 소식은 빠르게 늘어나지만, 같은 발표가 여러 2차 콘텐츠�
 - 마감 전 운영자가 승인한 콘텐츠 해시만 발송 대상으로 고정하는 승인 흐름
 - 승인되지 않은 원고의 자동 보류와 승인된 구독자 대상 예약 발송
 - 수신자별 한 건씩 분리한 Resend 요청, idempotency key, 발송 기록
+- 홈의 사이트 전체·오늘 조회수와 글별 누적 조회수 (D1, KST 기준)
 - Resend webhook을 통한 delivered, bounced, complained 상태 반영
 - 허니팟, 요청 크기 제한, IP rate limit, 전체 일일 접수 상한
 
@@ -113,6 +114,9 @@ Cloudflare Worker의 Cron Trigger는 다음 시각에 실행됩니다. 설정은
 - `briefing_editions`: 한 회차의 원문, slug, 공개 메타데이터, 콘텐츠 해시, 검토·공개·발송 상태. 웹과 이메일의 단일 원본
 - `briefing_deliveries`: edition과 subscriber별 개별 발송 및 실패 상태
 - `email_delivery_events`: 서명 검증을 통과한 Resend webhook 원문과 이벤트 시각
+- `page_view_daily`: 사이트 전체와 홈·아카이브·개인정보 처리방침·수신거부 페이지·공개 글의 날짜별 조회수. 브라우저 세션에서 같은 페이지를 다시 열면 중복 증가를 줄이며, 개인 식별자나 IP는 저장하지 않습니다. 수치는 고유 방문자 수가 아닌 대략적인 페이지 조회수입니다. 사이트 전체 카운터는 별도 키로 기록하므로 글별 카운터와 중복 합산하지 않습니다.
+
+`0007_historical_page_view_baseline.sql`은 2026-10-26 Cloudflare Analytics의 최근 30일 페이지뷰 추정치(전체 1,980회, 경로별 10% 표본 기반)에 0.9를 곱한 **1,782회**를 과거 날짜의 시작값으로 넣습니다. 글별 시작값에도 같은 비율을 적용합니다. 이 값은 운영 시작 이후의 정확한 누적 방문자 수가 아니며, 이후 조회수는 브라우저 세션에서 같은 페이지를 KST 날짜당 한 번 기록합니다. 과거 시작값은 적용일의 오늘 조회수에 포함되지 않습니다. Production 적용이 늦어지면 적용 직전 Cloudflare 기간과 값을 다시 확인해 누락 기간이 생기지 않도록 시작값을 갱신합니다.
 
 별도 관리자 대시보드는 없습니다. 초기 운영에서는 검토 메일의 승인 링크와 `scripts/subscribers.mjs`를 사용합니다.
 
@@ -131,6 +135,7 @@ Cloudflare Worker의 Cron Trigger는 다음 시각에 실행됩니다. 설정은
 | `/api/briefings/approve` | 검토 링크와 최종 승인 확인 |
 | `/api/subscribers/review` | 검토 메일에서 구독자 개별 승인/보류 |
 | `GET /api/public/v1/articles` | HETRICH 등 외부 소비자를 위한 공개 아티클 목록 |
+| `GET/POST /api/views` | 조회수 읽기/기록. 공개 글은 `slug` 쿼리 사용 |
 | `POST /api/webhooks/resend` | Resend 전송 이벤트 수신 |
 
 구독 신청은 이메일을 소문자로 정규화하고 unique index와 upsert로 중복 row를 방지합니다. 동일 IP는 작업별 10분에 5회로 제한되며, 구독 접수는 전체 24시간당 200건으로 제한됩니다. 수신거부 알림은 24시간당 25건의 외부 이메일 상한을 가집니다. 신청 저장 API는 현재 신규 신청마다 별도 운영자 알림을 보내지 않고, 다음 원고 검토 메일에 최대 100명의 `pending` 구독자를 포함합니다.
@@ -252,6 +257,8 @@ npm run subscribers -- recipients
 ## Deployment
 
 production 도메인은 [l-proof-ai.xyz](https://l-proof-ai.xyz)이며 Cloudflare custom domain으로 연결됩니다. Cloudflare Git 빌드는 `main`을 production 브랜치로 감시하고(포함 경로 `*`), `npm run build` 후 `npm run deploy:cloudflare`를 실행하도록 설정돼 있습니다. 2026-10-26 대시보드에서 `main`의 `973f548` 커밋으로 시작된 빌드와 활성 배포를 확인했습니다. 따라서 **`main` 푸시는 히스토리 보존 목적이어도 production 배포를 유발할 수 있습니다.** 푸시를 배포 성공으로 간주하지 않고 빌드 결과와 활성 배포를 확인합니다.
+
+새 D1 migration이 있는 변경은 production 데이터베이스에 migration을 적용한 뒤 코드를 배포해야 합니다. Git 빌드의 `deploy:cloudflare`는 migration을 자동 적용하지 않습니다.
 
 수동 배포가 필요하면 소유자가 Codex 내장 브라우저에서 Cloudflare에 로그인한 뒤, 승인된 배포 작업을 Codex가 대시보드에서 수행합니다. 배포 후에는 활성 배포 ID와 트래픽 비율을 읽어 기록합니다. GitHub Actions의 수동 `Deploy production` workflow와 로컬 전체 배포 절차는 [`docs/CD_ROLLOUT_REPORT.md`](docs/CD_ROLLOUT_REPORT.md)에 기록돼 있습니다. 로컬 전체 배포 명령은 다음과 같습니다.
 

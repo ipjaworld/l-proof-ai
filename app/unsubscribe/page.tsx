@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LStamp } from "@/components/l-stamp";
 import { UnsubscribeForm } from "@/components/unsubscribe-form";
+import { SitePageTracker } from "@/components/view-count";
 
 export default async function UnsubscribePage({
   searchParams,
@@ -11,6 +12,7 @@ export default async function UnsubscribePage({
   const hasSignedLink = /^[A-Za-z0-9_-]{1,128}$/.test(subscriber) && /^[a-f0-9]{64}$/.test(token);
   return (
     <main className="legal-page">
+      <SitePageTracker page="unsubscribe" />
       <Link className="legal-brand" href="/"><LStamp size="small" /> L-Proof-AI</Link>
       <article>
         <p className="legal-eyebrow">UNSUBSCRIBE</p>

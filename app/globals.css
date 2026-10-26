@@ -160,6 +160,32 @@ input {
   color: var(--muted);
 }
 
+.site-view-count {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin: 0;
+  padding-left: 1.2rem;
+  border-left: 1px solid rgba(23, 32, 51, 0.16);
+  color: var(--muted);
+  font: 0.72rem var(--font-mono);
+}
+.site-view-count span,
+.view-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+.site-view-count strong {
+  color: var(--ink);
+  font-weight: 700;
+}
+.view-count {
+  color: var(--muted);
+  font: 0.78rem var(--font-mono);
+}
+
 .header-actions,
 .header-actions nav,
 .publication-header nav {
@@ -873,6 +899,7 @@ input {
 .article-card h3 a { text-decoration: none; }
 .article-card > p:not(.article-card-meta) { margin: 0; color: var(--muted); }
 .article-card-link { margin-top: auto; padding-top: 2rem; }
+.article-card > .view-count { margin-top: 1rem; }
 
 .publication-page { min-height: 100svh; background: var(--morning); }
 .publication-header {
@@ -1087,6 +1114,40 @@ input {
   .edition-grid article { padding: 2rem 0; }
   .edition-grid article + article { border-left: 0; border-top: 1px solid var(--line); }
   .principles { margin-top: 5rem; }
+}
+
+@media (max-width: 600px) {
+  .site-header {
+    height: auto;
+    min-height: 6.5rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-content: center;
+    row-gap: 0.55rem;
+    padding-block: 0.65rem;
+  }
+  .header-actions { display: contents; }
+  .site-header .brand { white-space: nowrap; }
+  .header-actions nav { grid-column: 2; grid-row: 1; }
+  .site-view-count {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: end;
+    padding-left: 0;
+    border-left: 0;
+  }
+}
+
+@media (max-width: 400px) {
+  .header-actions nav { gap: 0.55rem; }
+  .header-actions nav a { font-size: 0.68rem; }
+}
+
+@media (max-width: 360px) {
+  .site-header { grid-template-columns: 1fr; min-height: 7.5rem; row-gap: 0.3rem; }
+  .site-header .brand { grid-column: 1; grid-row: 1; }
+  .header-actions nav { grid-column: 1; grid-row: 2; justify-self: end; }
+  .site-view-count { grid-column: 1; grid-row: 3; }
 }
 
 @media (max-width: 520px) {

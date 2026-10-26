@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { PublicationFooter, PublicationHeader } from "@/components/publication-shell";
 import { renderArticleMarkdown } from "@/lib/article-markdown";
 import { getAdjacentPublishedArticles, getPublishedArticle } from "@/lib/articles";
+import { ArticleViewCount } from "@/components/view-count";
+import { getViewCounts } from "@/lib/views";
 
 export const dynamic = "force-dynamic";
 
@@ -50,7 +52,13 @@ export default async function ArticlePage({ params }: Props) {
   const { slug } = await params;
   const article = await getPublishedArticle(slug);
   if (!article) notFound();
-  const adjacent = await getAdjacentPublishedArticles(article);
+  const [adjacent, viewCounts] = await Promise.all([
+    getAdjacentPublishedArticles(article),
+    getViewCounts(`article:${article.slug}`).catch((error) => {
+      console.error("article_view_counts_unavailable", error);
+      return null;
+    }),
+  ]);
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Article",
@@ -88,6 +96,7 @@ export default async function ArticlePage({ params }: Props) {
           <div className="article-byline">
             <span>이건하</span>
             <time dateTime={article.publishedAt}>{dateFormatter.format(new Date(article.publishedAt))}</time>
+            <ArticleViewCount slug={article.slug} initial={viewCounts?.total ?? null} />
           </div>
           {article.tags.length > 0 ? (
             <ul className="article-tags" aria-label="태그">

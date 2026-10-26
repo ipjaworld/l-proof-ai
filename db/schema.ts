@@ -1,4 +1,4 @@
-import { index, integer, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const subscribers = sqliteTable(
   "subscribers",
@@ -63,6 +63,14 @@ export const requestLimits = sqliteTable("request_limits", {
   count: integer("count").notNull().default(1),
   updatedAt: integer("updated_at").notNull(),
 });
+
+export const pageViewDaily = sqliteTable("page_view_daily", {
+  pageKey: text("page_key").notNull(),
+  dayKst: text("day_kst").notNull(),
+  viewCount: integer("view_count").notNull().default(0),
+}, (table) => [
+  primaryKey({ columns: [table.pageKey, table.dayKst] }),
+]);
 
 export const briefingEditions = sqliteTable(
   "briefing_editions",

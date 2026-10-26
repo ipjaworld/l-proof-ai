@@ -43,6 +43,20 @@
       "when": 1790241666000,
       "tag": "0005_archive_pilot_issue",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792972800000,
+      "tag": "0006_page_views",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792972800001,
+      "tag": "0007_historical_page_view_baseline",
+      "breakpoints": true
     }
   ]
 }

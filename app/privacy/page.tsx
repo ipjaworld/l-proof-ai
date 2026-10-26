@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { LStamp } from "@/components/l-stamp";
+import { SitePageTracker } from "@/components/view-count";
 
 export default function PrivacyPage() {
   return (
     <main className="legal-page">
+      <SitePageTracker page="privacy" />
       <Link className="legal-brand" href="/"><LStamp size="small" /> L-Proof-AI</Link>
       <article>
         <p className="legal-eyebrow">PRIVACY · 2026.09.12</p>
