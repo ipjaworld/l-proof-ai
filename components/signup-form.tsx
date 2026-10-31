@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useId, useState } from "react";
+import { FormEvent, useCallback, useEffect, useId, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -42,6 +42,23 @@ export function SignupForm({
   const [message, setMessage] = useState("");
   const [consent, setConsent] = useState(false);
   const [interests, setInterests] = useState<Interest[]>([]);
+  const widget = useRef<HTMLDivElement>(null);
+  const widgetId = useRef<string | null>(null);
+
+  // Explicit render: the script loads once, but this form can mount again after client navigation.
+  const renderWidget = useCallback(() => {
+    if (widget.current && window.turnstile && !widgetId.current) {
+      widgetId.current = window.turnstile.render(widget.current);
+    }
+  }, []);
+
+  useEffect(() => {
+    renderWidget();
+    return () => {
+      if (widgetId.current) window.turnstile?.remove(widgetId.current);
+      widgetId.current = null;
+    };
+  }, [renderWidget]);
 
   const submit = useCallback(async (payload: SubscribePayload) => {
     setState("pending");
@@ -175,8 +192,8 @@ export function SignupForm({
     <form className="signup-form" onSubmit={handleSubmit} noValidate>
       {turnstileSiteKey ? (
         <>
-          <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" strategy="afterInteractive" />
-          <div className="cf-turnstile" data-sitekey={turnstileSiteKey} data-action="subscribe" />
+          <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" strategy="afterInteractive" onReady={renderWidget} />
+          <div ref={widget} className="cf-turnstile" data-sitekey={turnstileSiteKey} data-action="subscribe" />
         </>
       ) : (
         <p className="form-message" role="status">보안 확인 설정이 필요해 현재 신청을 받을 수 없습니다.</p>

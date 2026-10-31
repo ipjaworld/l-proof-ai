@@ -1,0 +1,53 @@
+// Behaviour checks on the running preview: reverse scroll, reduced motion, WebGL failure, frame time.
+const {chromium}=require('C:/Users/tbrk7/AppData/Local/npm-cache/_npx/da7caeae9db9c589/node_modules/playwright-core');
+const URL='http://127.0.0.1:8768/rebuild-cinematic/';
+const args=['--ignore-gpu-blocklist','--use-angle=d3d11','--enable-gpu-rasterization','--disable-frame-rate-limit'];
+const sc=(p,v)=>p.evaluate(v=>{const s=document.querySelector('#story');scrollTo({top:s.offsetTop+v*window.__cine.state().height,behavior:'instant'})},v);
+const settle=(p,v)=>p.waitForFunction(v=>{const s=window.__cine.state();return Math.abs(s.target-v)<.02&&Math.abs(s.Q-s.target)<.012},v,{timeout:60000});
+const fps=(p,ms=2500)=>p.evaluate(ms=>new Promise(r=>{let n=0,last=performance.now(),max=0;const s=last,f=now=>{n++;max=Math.max(max,now-last);last=now;now-s<ms?requestAnimationFrame(f):r({avgMs:+((now-s)/n).toFixed(1),maxMs:+max.toFixed(1)})};requestAnimationFrame(f)}),ms);
+(async()=>{
+  const b=await chromium.launch({executablePath:'C:/Program Files/Google/Chrome/Application/chrome.exe',headless:true,args});
+  const out={};
+  for(const [name,viewport] of [['desktop',{width:1280,height:720}],['mobile',{width:390,height:844}]]){
+    const c=await b.newContext({viewport}),p=await c.newPage(),errors=[];p.on('pageerror',e=>errors.push(e.message));
+    await p.goto(URL,{waitUntil:'networkidle'});await p.waitForFunction(()=>window.__cine?.ready);
+    const r={renderer:await p.evaluate(()=>{const g=document.createElement('canvas').getContext('webgl2'),e=g.getExtension('WEBGL_debug_renderer_info');return g.getParameter(e.UNMASKED_RENDERER_WEBGL)})};
+    r.overflow=await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth);
+    await p.waitForTimeout(1200);r.hero=await fps(p);
+    await sc(p,2.8);await settle(p,2.8);r.storm=await fps(p);
+    await sc(p,9.3);await settle(p,9.3);r.review=await fps(p);
+    await sc(p,11.8);await settle(p,11.8);await p.waitForTimeout(400);r.afterHitImpact=(await p.evaluate(()=>window.__cine.state())).impact;
+    await sc(p,9);await settle(p,9);r.reverseImpact=(await p.evaluate(()=>window.__cine.state())).impact;
+    await sc(p,11.8);await settle(p,11.8);await p.waitForTimeout(300);r.rehitImpact=(await p.evaluate(()=>window.__cine.state())).impact;
+    await sc(p,0);await settle(p,0);r.backToTop=await p.evaluate(()=>window.__cine.state().Q);
+    r.heroOpacity=await p.evaluate(()=>getComputedStyle(document.querySelector('.copy-hero')).opacity);
+    await p.evaluate(()=>document.querySelector('#subscribe').scrollIntoView());await p.waitForTimeout(200);
+    await p.fill('#email','test@example.com');await p.click('#signup-form button');r.formFeedback=await p.isVisible('#signup-feedback');
+    r.errors=errors;out[name]=r;await c.close();
+  }
+  const c=await b.newContext({viewport:{width:1280,height:720},reducedMotion:'reduce'}),p=await c.newPage();const e1=[];p.on('pageerror',e=>e1.push(e.message));
+  await p.goto(URL,{waitUntil:'networkidle'});await p.waitForFunction(()=>window.__cine?.ready);
+  out.reduced={simple:await p.evaluate(()=>document.body.classList.contains('simple')),storyH:await p.evaluate(()=>document.querySelector('#story').offsetHeight)};
+  await p.click('[data-go="3"]');await p.waitForTimeout(300);out.reduced.Q=await p.evaluate(()=>window.__cine.state().Q);out.reduced.errors=e1;await p.screenshot({path:process.argv[2]+'/reduced-stop3.jpg',type:'jpeg',quality:80});await c.close();
+  const c2=await b.newContext({viewport:{width:1280,height:720}}),q=await c2.newPage();
+  await q.addInitScript(()=>{const o=HTMLCanvasElement.prototype.getContext;HTMLCanvasElement.prototype.getContext=function(t,...a){return /webgl/.test(t)?null:o.call(this,t,...a)}});
+  await q.goto(URL,{waitUntil:'networkidle'});await q.waitForFunction(()=>window.__cine?.failed);
+  out.noWebgl={fallback:await q.isVisible('.fallback'),heroOpacity:await q.evaluate(()=>getComputedStyle(document.querySelector('.copy-hero')).opacity)};await q.screenshot({path:process.argv[2]+'/no-webgl.jpg',type:'jpeg',quality:80});
+  const c3=await b.newContext({viewport:{width:1280,height:720}}),l=await c3.newPage();const e3=[];l.on('pageerror',e=>e3.push(e.message));
+  await l.goto(URL+'?q=low',{waitUntil:'networkidle'});await l.waitForFunction(()=>window.__cine?.ready);await l.waitForTimeout(1500);
+  out.lowTier={...(await l.evaluate(()=>{const s=window.__cine.state();return{tier:s.quality.tier,sheets:s.sheets,dpr:s.quality.dpr}})),errors:e3};await l.screenshot({path:process.argv[2]+'/low-tier.jpg',type:'jpeg',quality:80});await c3.close();
+  const c4=await b.newContext({viewport:{width:1280,height:720}}),a=await c4.newPage();
+  await a.addInitScript(()=>{const r=window.requestAnimationFrame.bind(window);window.requestAnimationFrame=f=>setTimeout(()=>r(f),36)});
+  await a.goto(URL+'?q=high',{waitUntil:'networkidle'});await a.waitForFunction(()=>window.__cine?.ready);
+  const start=await a.evaluate(()=>window.__cine.state().sheets);await a.waitForFunction(s=>window.__cine.state().sheets<s,start,{timeout:30000});
+  out.adaptive={start,after:await a.evaluate(()=>{const s=window.__cine.state();return{sheets:s.sheets,dpr:s.quality.dpr,dof:s.quality.dof,steps:s.quality.steps}})};await c4.close();
+  const c5=await b.newContext({viewport:{width:1280,height:720}}),z=await c5.newPage();const e5=[];z.on('pageerror',e=>e5.push(e.message));
+  await z.goto(URL+'assets/stamp.json');
+  await z.evaluate(u=>{document.body.innerHTML='<iframe id="f" style="width:1280px;height:0;border:0"></iframe>';document.querySelector('#f').src=u},URL);
+  await z.waitForTimeout(2500);
+  const frame=z.frames().find(f=>f.url().includes('rebuild-cinematic/')&&!f.url().includes('stamp'));frame.on?.('pageerror',()=>{});
+  const hidden=await frame.evaluate(()=>({ready:!!window.__cine?.ready,failed:window.__cine?.failed||null}));
+  await z.evaluate(()=>{document.querySelector('#f').style.height='720px'});await frame.waitForFunction(()=>window.__cine?.ready||window.__cine?.failed,null,{timeout:20000});await z.waitForTimeout(800);
+  out.zeroSizeStart={hidden,shown:await frame.evaluate(()=>({ready:!!window.__cine.ready,failed:window.__cine.failed||null,Q:window.__cine.state?.().Q,storyScreens:document.querySelector('#story').offsetHeight/innerHeight})),errors:e5};await c5.close();
+  console.log(JSON.stringify(out,null,1));await b.close();
+})().catch(e=>{console.error(e);process.exitCode=1});

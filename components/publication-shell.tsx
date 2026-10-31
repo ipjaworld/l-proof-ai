@@ -11,7 +11,7 @@ export function PublicationHeader() {
       </Link>
       <nav aria-label="주 메뉴">
         <Link href="/articles" prefetch={false}>Articles</Link>
-        <Link href="/#person-title" prefetch={false}>About</Link>
+        <Link href="/about" prefetch={false}>About</Link>
         <Link className="publication-subscribe" href="/#signup-title" prefetch={false}>Subscribe</Link>
       </nav>
     </header>

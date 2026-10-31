@@ -86,6 +86,17 @@ export const siteContent = {
     "루머·전망·확인된 사실을 한 문장 안에서 섞지 않아요.",
     "이슈가 적은 주에는 억지로 개수를 채우지 않아요.",
   ],
+  // The issue printed in the home film. Update together when the film should show a newer issue.
+  filmIssue: {
+    issue: "012",
+    slug: "ai-at-the-approval-button",
+    titleLines: ["AI가 승인 버튼", "앞에 앉았다"],
+    date: "2026.10.29",
+    excerptLines: ["‘승인 절차를 거친다’와", "‘반드시 사람에게 묻는다’가", "같은 뜻은 아닌 셈입니다."],
+    proof: "03 공식 확인 · 직접 재현하지 않음",
+    takeLines: ["승인 창이 줄면,", "무엇을 놓쳤는지 더 알아야 한다"],
+    correction: "승인 ≠ 사람의 확인",
+  },
   flags: {
     showQuarterlyRescore: false,
   },

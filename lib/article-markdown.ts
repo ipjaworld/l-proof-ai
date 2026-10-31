@@ -96,3 +96,10 @@ export function renderArticleMarkdown(markdown: string) {
   flushAll();
   return blocks.join("\n");
 }
+
+// The first heading under an article's "L-Proof의 해석" section, when it has one.
+export function interpretationHeading(contentText: string) {
+  const lines = contentText.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const index = lines.findIndex((line) => /^#*\s*L-Proof의 해석$/.test(line));
+  return index < 0 ? null : lines[index + 1]?.replace(/^#+\s*/, "") ?? null;
+}
