@@ -54,7 +54,7 @@ export const siteContent = {
   ],
   operator: {
     name: "이건하",
-    role: "현직 프론트엔드 개발자 · 1인 운영",
+    role: "프론트엔드 개발자 · 1인 운영",
     image: "/images/editorial-proof-desk.png",
     imageAlt: "검토 표시가 남은 원고와 연필, 붉은 도장이 놓인 편집자의 책상",
     introduction:

@@ -6,7 +6,7 @@ import "../film.css";
 
 export const metadata: Metadata = {
   title: "About — L-Proof-AI",
-  description: "현직 프론트엔드 개발자가 직접 엄선한 AI 소식과 판단을, 주 2회 브리핑으로 보내드립니다.",
+  description: "프론트엔드 개발자가 직접 엄선한 AI 소식과 판단을, 주 2회 브리핑으로 보내드립니다.",
   alternates: { canonical: "/about" },
 };
 
@@ -23,7 +23,7 @@ export default function AboutPage() {
             <br />
             <em>누가 확인하나요?</em>
           </h1>
-          <p>현직 프론트엔드 개발자가 직접 엄선한 AI 소식과 판단을, 주 2회 브리핑으로 보내드립니다.</p>
+          <p>프론트엔드 개발자가 직접 엄선한 AI 소식과 판단을, 주 2회 브리핑으로 보내드립니다.</p>
         </section>
 
         <section className="about-sheet about-person" aria-labelledby="person-title">
