@@ -13,6 +13,10 @@ const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v)),mix=T.MathUtils.lerp;
 const ease=v=>{v=clamp(v);return v*v*v*(v*(v*6-15)+10)};
 const range=(x,a,b)=>ease((x-a)/(b-a));
 const SCREENS=15,STOPS=[0,5.9,9,11.75,14.5],HIT=11.55;
+// Scroll distance (in viewports) to film time. Stretches where the page changes keep more scroll than the moves between them.
+const PACE=[[0,0],[.5,1],[1.9,3.9],[2.9,5.4],[4.5,7.75],[4.85,8.6],[6.35,10.75],[6.95,11.6],[7.45,12.5],[8.45,14.5],[8.9,15]];
+const SCROLL_LENGTH=PACE[PACE.length-1][0],MAX_UNIT=860;
+const lookup=(v,from,to)=>{const i=Math.max(0,PACE.findIndex((p,n)=>n>0&&v<=p[from])-1),a=PACE[i],b=PACE[i+1]??a;return mix(a[to],b[to],clamp((v-a[from])/((b[from]-a[from])||1)))};
 const PAPER=[3,4.24],INK=[.72,1.66],BG='#05070c',RED='#a53a2e';
 const mobile=matchMedia('(max-width:760px)').matches;
 const forced=new URLSearchParams(location.search).get('q');
@@ -470,7 +474,8 @@ function updateCopy(t){
   root.classList.toggle('film-light',t>14);
   rail.inert=!(t>.9||reduced);skipFilm.inert=t>14.2;skipFilm.style.opacity=String(range(t,.3,.9)*(1-range(t,13.7,14.2)));
 }
-function readScroll(){if(reduced||!height)return;target=clamp(Math.max(0,-story.getBoundingClientRect().top)/height,0,SCREENS)}
+const scrollUnit=()=>Math.min(height,MAX_UNIT);
+function readScroll(){if(reduced||!height)return;target=lookup(clamp(Math.max(0,-story.getBoundingClientRect().top)/scrollUnit(),0,SCROLL_LENGTH),0,1)}
 function resize(){
   const nextWidth=stage.clientWidth,nextHeight=sticky.clientHeight;
   if(!nextWidth||!nextHeight)return;
@@ -480,7 +485,7 @@ function resize(){
 function layout(){
   if(!stage.clientWidth||!sticky.clientHeight)return;
   width=stage.clientWidth;height=sticky.clientHeight;aspect=width/height;
-  story.style.height=reduced?`${height}px`:`${(SCREENS+1)*height}px`;
+  story.style.height=reduced?`${height}px`:`${SCROLL_LENGTH*scrollUnit()+height}px`;
   if(renderer){
     const dpr=quality.dpr;renderer.setPixelRatio(dpr);renderer.setSize(width,height,false);
     camera.aspect=aspect;camera.updateProjectionMatrix();
@@ -497,7 +502,7 @@ function tick(now){
   const dt=Math.min(.05,(now-previous)/1000);const real=now-previous;previous=now;
   if(disposed||document.hidden||(Q>=SCREENS-.02&&target>=SCREENS&&story.getBoundingClientRect().bottom<0))return;
   time+=reduced?0:dt;
-  const before=Q;Q=reduced?target:Q+(target-Q)*(1-Math.exp(-3.8*dt));if(Math.abs(Q-target)<.0006)Q=target;
+  const before=Q;Q=reduced?target:Q+(target-Q)*(1-Math.exp(-3.3*dt));if(Math.abs(Q-target)<.0006)Q=target;
   wind+=(clamp((Q-before)/Math.max(dt,.004)*2.4,-1.4,7)-wind)*(1-Math.exp(-5*dt));stormTime+=reduced?0:dt*(1+wind);
   frame(dt);
   frames++;slow+=real>30?1:0;
@@ -508,7 +513,7 @@ function stepDown(){
   storm.geometry.instanceCount=Math.ceil(storm.geometry.instanceCount*.6);
   layout();
 }
-function go(i){if(reduced){target=Q=STOPS[i];impact=i>=3?2:-1;frame(0)}else window.scrollTo({top:story.offsetTop+STOPS[i]*height,behavior:'instant'})}
+function go(i){if(reduced){target=Q=STOPS[i];impact=i>=3?2:-1;frame(0)}else window.scrollTo({top:story.offsetTop+lookup(STOPS[i],1,0)*scrollUnit(),behavior:'instant'})}
 dots.forEach(b=>b.addEventListener('click',()=>go(Number(b.dataset.go)),listen));
 function syncMotion(){root.classList.toggle('film-simple',reduced);const b=root.querySelector('#motion');b.textContent=reduced?'▷':'Ⅱ';b.setAttribute('aria-pressed',String(reduced));b.setAttribute('aria-label',reduced?'스크롤 연출 켜기':'움직임 줄이기')}
 root.querySelector('#motion').addEventListener('click',()=>{reduced=!reduced;syncMotion();layout();scrollTo({top:0,behavior:'instant'});if(reduced){target=Q=0;frame(0)}},listen);
@@ -531,7 +536,7 @@ async function start(){
   buildRoom();buildPaper();buildStorm();buildPost();await buildStamp();if(disposed)return;
   layout();sizeWatch=new ResizeObserver(resize);sizeWatch.observe(sticky);readScroll();Q=target;running=true;frame(0);stage.classList.add('on');frameId=requestAnimationFrame(tick);
   await glyphs();await document.fonts.ready;if(disposed)return;repaintFonts();
-  window.__cine={state:()=>({Q,target,height,impact,time,wind,quality:{...quality},sheets:storm.geometry.instanceCount}),ready:true};
+  window.__cine={scrollFor:t=>story.offsetTop+lookup(t,1,0)*scrollUnit(),state:()=>({Q,target,height,impact,time,wind,quality:{...quality},sheets:storm.geometry.instanceCount}),ready:true};
 }
 start().catch(error=>{
   // WebGL or a texture failed: fall back to the plain page, which is complete without the film.

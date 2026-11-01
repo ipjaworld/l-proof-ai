@@ -10,7 +10,7 @@ declare global {
 }
 
 const issue = siteContent.filmIssue;
-const FILM_BUNDLE = "/film/scene.js?v=14";
+const FILM_BUNDLE = "/film/scene.js?v=15";
 
 // The markup below is a complete page without JavaScript; the film only enhances it.
 export function HomeFilm() {
