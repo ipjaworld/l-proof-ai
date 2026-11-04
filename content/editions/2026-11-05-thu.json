@@ -1,0 +1,13 @@
+{
+  "source": "content/drafts/2026-11-05.md",
+  "id": "2026-11-05-thu",
+  "editionNumber": 14,
+  "slug": "git-and-review-after-coding-agents",
+  "previewText": "AI가 코드를 더 쓰자, Git부터 바빠졌다",
+  "proofLevel": 3,
+  "tags": ["agents", "git", "security", "models"],
+  "heroImageUrl": null,
+  "reviewDueAt": "2026-11-05T08:40:00+09:00",
+  "scheduledPublishAt": "2026-11-05T08:50:00+09:00",
+  "scheduledSendAt": "2026-11-05T09:00:00+09:00"
+}
