@@ -1,0 +1,13 @@
+{
+  "source": "content/drafts/2026-11-09.md",
+  "id": "2026-11-09-mon",
+  "editionNumber": 15,
+  "slug": "when-agents-follow-todos",
+  "previewText": "열린 TODO도 지금 고치라는 지시는 아니다",
+  "proofLevel": 3,
+  "tags": ["agents", "code-review", "security"],
+  "heroImageUrl": null,
+  "reviewDueAt": "2026-11-09T06:00:00+09:00",
+  "scheduledPublishAt": "2026-11-09T08:50:00+09:00",
+  "scheduledSendAt": "2026-11-09T09:00:00+09:00"
+}
