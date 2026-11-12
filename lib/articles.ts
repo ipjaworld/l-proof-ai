@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { getCloudflareEnv } from "@/lib/cloudflare-env";
+import { splitEmailOnlyText } from "@/lib/briefing-content";
 
 const siteOrigin = "https://l-proof-ai.xyz";
 
@@ -56,7 +57,7 @@ function mapArticle(row: ArticleRow): PublishedArticle {
     slug: row.slug,
     title: row.subject,
     summary: row.preview_text,
-    contentText: row.content_text,
+    contentText: splitEmailOnlyText(row.content_text).article,
     proofLevel: row.proof_level,
     tags: parseTags(row.tags),
     heroImageUrl: row.hero_image_url,

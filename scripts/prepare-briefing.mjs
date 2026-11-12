@@ -58,29 +58,54 @@ export function render(markdown) {
 }
 
 export function prepare(manifest, source) {
-  const contentText = readerText(source);
-  const subject = contentText.match(/^# (.+)$/m)?.[1];
-  if (!subject || internalHeading.test(contentText)) throw new Error('Invalid reader content');
+  const articleText = readerText(source);
+  const subject = articleText.match(/^# (.+)$/m)?.[1];
+  if (!subject || internalHeading.test(articleText)) throw new Error('Invalid reader content');
   const times = ['reviewDueAt', 'scheduledPublishAt', 'scheduledSendAt'].map(k => Date.parse(manifest[k]));
   if (!times.every(Number.isFinite) || !(times[0] < times[1] && times[1] < times[2])) throw new Error('Invalid schedule');
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(manifest.slug) || !Number.isInteger(manifest.editionNumber) || manifest.editionNumber < 1) throw new Error('Invalid edition identity');
-  const { source: sourcePath, ...metadata } = manifest;
-  void sourcePath;
-  const contentHtml = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head><body style="margin:0;background:#f4f1ea;color:#172033;font-family:Arial,sans-serif"><main style="max-width:700px;margin:auto;padding:32px 20px"><p>L-PROOF-AI · ISSUE ${String(manifest.editionNumber).padStart(2, '0')}</p><h1>${escape(subject)}</h1>${render(contentText)}</main></body></html>`;
+  const emailIntro = typeof manifest.emailIntro === 'string' ? manifest.emailIntro.trim() : '';
+  if (emailIntro && (internalHeading.test(emailIntro) || /<!--\s*email-only:/i.test(emailIntro))) throw new Error('Invalid email intro');
+  const { source: sourcePath, emailIntro: ignoredEmailIntro, ...metadata } = manifest;
+  void sourcePath; void ignoredEmailIntro;
+  const articleHtml = `<p>L-PROOF-AI · ISSUE ${String(manifest.editionNumber).padStart(2, '0')}</p><h1>${escape(subject)}</h1>${render(articleText)}`;
+  const webHtml = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head><body style="margin:0;background:#f4f1ea;color:#172033;font-family:Arial,sans-serif"><main style="max-width:700px;margin:auto;padding:32px 20px">${articleHtml}</main></body></html>`;
+  const contentText = emailIntro
+    ? `<!-- email-only:start -->\n${emailIntro}\n\n---\n<!-- email-only:end -->\n\n${articleText}`
+    : articleText;
+  const contentHtml = emailIntro
+    ? webHtml.replace('<main style="max-width:700px;margin:auto;padding:32px 20px">', `<main style="max-width:700px;margin:auto;padding:32px 20px"><!-- email-only:start -->${render(`${emailIntro}\n\n---`)}<!-- email-only:end -->`)
+    : webHtml;
   const payload = { ...metadata, subject, contentText, contentHtml };
   for (const k of ['reviewDueAt', 'scheduledPublishAt', 'scheduledSendAt']) payload[k] = new Date(payload[k]).toISOString();
-  return payload;
+  return { payload, articleText, webHtml, emailIntro };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   const [manifestPath, output] = process.argv.slice(2);
   if (!manifestPath || !output) throw new Error('Usage: node scripts/prepare-briefing.mjs <manifest.json> <output-directory>');
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
-  const payload = prepare(manifest, readFileSync(manifest.source, 'utf8'));
+  const { payload, articleText, webHtml, emailIntro } = prepare(manifest, readFileSync(manifest.source, 'utf8'));
   mkdirSync(output, { recursive: true });
-  writeFileSync(join(output, 'reader.md'), payload.contentText + '\n');
-  writeFileSync(join(output, 'reader.html'), payload.contentHtml);
+  writeFileSync(join(output, 'reader.md'), articleText + '\n');
+  writeFileSync(join(output, 'reader.html'), webHtml);
+  if (emailIntro) {
+    writeFileSync(join(output, 'email.txt'), `${emailIntro}\n\n---\n\n${articleText}\n`);
+    writeFileSync(join(output, 'email.html'), payload.contentHtml);
+  }
   const serialized = JSON.stringify(payload, null, 2) + '\n';
   writeFileSync(join(output, 'payload.json'), serialized);
-  console.log(JSON.stringify({ id: payload.id, subject: payload.subject, scheduledPublishAt: payload.scheduledPublishAt, scheduledSendAt: payload.scheduledSendAt, payloadSha256: createHash('sha256').update(serialized).digest('hex'), output: resolve(output) }));
+  const publication = JSON.stringify({
+    editionNumber: payload.editionNumber,
+    slug: payload.slug,
+    previewText: payload.previewText,
+    proofLevel: payload.proofLevel,
+    tags: payload.tags,
+    heroImageUrl: payload.heroImageUrl,
+    scheduledPublishAt: payload.scheduledPublishAt,
+  });
+  const contentHash = createHash('sha256')
+    .update(`${payload.subject}\n${payload.contentText}\n${payload.contentHtml}\n${publication}`)
+    .digest('hex');
+  console.log(JSON.stringify({ id: payload.id, subject: payload.subject, scheduledPublishAt: payload.scheduledPublishAt, scheduledSendAt: payload.scheduledSendAt, contentHash, payloadSha256: createHash('sha256').update(serialized).digest('hex'), output: resolve(output) }));
 }

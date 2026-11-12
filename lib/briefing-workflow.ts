@@ -1,4 +1,5 @@
 import { createUnsubscribeToken } from "@/lib/subscription-security";
+import { insertWebLinkAfterEmailIntro, splitEmailOnlyText } from "@/lib/briefing-content";
 
 type WorkerEnv = Cloudflare.Env;
 
@@ -93,7 +94,7 @@ function articleUrl(env: WorkerEnv, slug: string) {
 
 function addWebVersionToEmail(html: string, url: string) {
   const notice = `<p style="margin:0 0 30px;padding:16px;background:#fff;border-top:3px solid #b33a2b;line-height:1.7">웹에서 읽기: <a href="${escapeHtml(url)}" style="color:#b33a2b;font-weight:700">${escapeHtml(url)}</a></p>`;
-  return html.replace(/(<body[^>]*>)/i, `$1${notice}`);
+  return insertWebLinkAfterEmailIntro(html, notice);
 }
 
 function addUnsubscribeToEmail(html: string, url: string) {
@@ -226,6 +227,10 @@ export async function saveAndSendReview(
       const base = `${baseUrl}/api/subscribers/review?edition=${encodeURIComponent(input.id)}&token=${encodeURIComponent(token)}&subscriber=${encodeURIComponent(subscriber.id)}`;
       return `<li style="padding:14px 0;border-bottom:1px solid #ddd"><strong>${escapeHtml(subscriber.email)}</strong>${subscriber.name ? ` · ${escapeHtml(subscriber.name)}` : ""}<br><a href="${escapeHtml(`${base}&action=approve`)}">승인</a> · <a href="${escapeHtml(`${base}&action=hold`)}">보류</a></li>`;
     }).join("")}</ul>`;
+  const reviewParts = splitEmailOnlyText(input.contentText);
+  const reviewedContent = reviewParts.intro
+    ? `${reviewParts.intro}\n\n${reviewParts.article}`
+    : reviewParts.article;
   const reviewText = [
     `L-Proof-AI 검토용 초안 · ${input.id}`,
     `예정 URL: ${articleUrl(env, input.slug)}`,
@@ -233,7 +238,7 @@ export async function saveAndSendReview(
     `웹 공개 예정: ${input.scheduledPublishAt}`,
     `발송 예정: ${input.scheduledSendAt}`,
     "",
-    input.contentText,
+    reviewedContent,
     "",
     pendingText,
     "",
@@ -356,10 +361,12 @@ async function sendEdition(env: WorkerEnv, edition: EditionRow, now: Date) {
       const scheduledAt = deliverySlotMs > Date.now() + 5_000
         ? new Date(deliverySlotMs).toISOString()
         : undefined;
+      const { intro, article } = splitEmailOnlyText(edition.content_text);
+      const webLink = `웹에서 읽기: ${articleUrl(env, edition.slug)}`;
       const emailId = await sendWithResend(env, {
         to: subscriber.email,
         subject: edition.subject,
-        text: `웹에서 읽기: ${articleUrl(env, edition.slug)}\n\n${edition.content_text}\n\n수신거부: ${unsubscribeUrl}`,
+        text: `${intro ? `${intro}\n\n` : ""}${webLink}\n\n${article}\n\n수신거부: ${unsubscribeUrl}`,
         html: addUnsubscribeToEmail(
           addWebVersionToEmail(edition.content_html, articleUrl(env, edition.slug)),
           unsubscribeUrl,
